@@ -153,6 +153,8 @@ int qfoc_vref_set(QFoc *foc, float vref);
 
 int qfoc_pref_set(QFoc *foc, float pref);
 
+int qfoc_force_calc(float vbus, float q, float d, float edegree, uint16_t pwm_max, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
+
 /* FOC current open-loop control */
 int qfoc_oloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
 

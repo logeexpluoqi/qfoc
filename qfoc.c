@@ -491,6 +491,20 @@ int qfoc_pref_set(QFoc *foc, float pref)
     return 0;
 }
 
+int qfoc_force_calc(float vbus, float q, float d, float edegree, uint16_t pwm_max, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
+{
+    float ta, tb, tc;
+
+    edegree = _fmodf(edegree, 360.0f);
+    edegree = (edegree < 0.0f) ? edegree + 360.0f : edegree;
+
+    _qsvm_calc(vbus, q, d, edegree, &ta, &tb, &tc);
+    *pwma = (uint16_t)(ta * pwm_max);
+    *pwmb = (uint16_t)(tb * pwm_max);
+    *pwmc = (uint16_t)(tc * pwm_max);
+    return 0;
+}
+
 int qfoc_oloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
 {
     float ta, tb, tc;
