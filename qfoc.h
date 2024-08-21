@@ -109,17 +109,6 @@ int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, flo
 
 int qfoc_enable(QFoc *foc, QFocEnable ena);
 
-/** 
- * Return the space vector generater by 3 phase half-bridge status
- * Assum S(abc) means phase a, b, c half-bridge status, 1 means up-bridge on, 0 means down-bridge on.
- * S(100): means current from phase a to phase b and phase c
- * S(010): means current from phase b to phase a and phase c
- * S(001): means current from phase c to phase a and phase b
- * return 1: S(001), 2: S(010), 3: S(100)
- * return 0: no space vector
- */
-int qfoc_gates_state(QFoc *foc);
-
 int qfoc_ppid_init(QFoc *foc, float kp, float ki, float kd);
 
 int qfoc_vpid_init(QFoc *foc, float kp, float ki, float kd);
@@ -153,6 +142,7 @@ int qfoc_vref_set(QFoc *foc, float vref);
 
 int qfoc_pref_set(QFoc *foc, float pref);
 
+/* FOC force output by given edegree, iq and id, return the svm sector */
 int qfoc_force_calc(float vbus, float q, float d, float edegree, uint16_t pwm_max, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
 
 /* FOC current open-loop control */

@@ -346,19 +346,6 @@ int qfoc_enable(QFoc *foc, QFocEnable ena)
     return 0;
 }
 
-int qfoc_gates_state(QFoc *foc)
-{
-    if((foc->pwma >= foc->pwmb) && (foc->pwma >= foc->pwmc)) {
-        return 3;
-    } else if((foc->pwmb >= foc->pwma) && (foc->pwmb >= foc->pwmc)) {
-        return 2;
-    } else if((foc->pwmc >= foc->pwma) && (foc->pwmc >= foc->pwmb)) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
 int qfoc_ppid_init(QFoc *foc, float kp, float ki, float kd)
 {
     return pid_init(&foc->pid_p, kp, ki, kd, foc->vmax);
@@ -498,11 +485,11 @@ int qfoc_force_calc(float vbus, float q, float d, float edegree, uint16_t pwm_ma
     edegree = _fmodf(edegree, 360.0f);
     edegree = (edegree < 0.0f) ? edegree + 360.0f : edegree;
 
-    _qsvm_calc(vbus, q, d, edegree, &ta, &tb, &tc);
+    int sector = _qsvm_calc(vbus, q, d, edegree, &ta, &tb, &tc);
     *pwma = (uint16_t)(ta * pwm_max);
     *pwmb = (uint16_t)(tb * pwm_max);
     *pwmc = (uint16_t)(tc * pwm_max);
-    return 0;
+    return sector;
 }
 
 int qfoc_oloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
