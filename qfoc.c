@@ -545,42 +545,39 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
 }
 
 /* FOC velocity/position current double loop pid control */
-int qfoc_vloop_update(QFoc *foc, float vupdate, float ilimit)
+int qfoc_vloop_update(QFoc *foc, float di_limit)
 {
     float iref;
-    foc->v = vupdate;
     iref = pid_calc(&foc->pid_v, foc->vref - foc->v);
-    if(ilimit != 0) {
-        iref = iref > ilimit ? ilimit : iref;
-        iref = iref < -ilimit ? -ilimit : iref;
+    if(di_limit != 0) {
+        iref = iref > di_limit ? di_limit : iref;
+        iref = iref < -di_limit ? -di_limit : iref;
     }
     foc->iqref = iref;
     foc->idref = 0;
     return 0;
 }
 
-int qfoc_ploop_update(QFoc *foc, float pupdate, float ilimit)
+int qfoc_ploop_update(QFoc *foc, float di_limit)
 {
     float iref;
-    foc->p = pupdate;
     iref = pid_calc(&foc->pid_p, foc->pref - foc->p);
-    if(ilimit != 0) {
-        iref = iref > ilimit ? ilimit : iref;
-        iref = iref < -ilimit ? -ilimit : iref;
+    if(di_limit != 0) {
+        iref = iref > di_limit ? di_limit : iref;
+        iref = iref < -di_limit ? -di_limit : iref;
     }
     foc->iqref = iref;
     foc->idref = 0;
     return 0;
 }
 
-int qfoc_vploop_update(QFoc *foc, float pupdate, float vlimit)
+int qfoc_vploop_update(QFoc *foc, float dv_limit)
 {
     float vref;
-    foc->p = pupdate;
     vref = pid_calc(&foc->pid_p, foc->pref - foc->p);
-    if(vlimit != 0) {
-        vref = vref > vlimit ? vlimit : vref;
-        vref = vref < -vlimit ? -vlimit : vref;
+    if(dv_limit != 0) {
+        vref = vref > dv_limit ? dv_limit : vref;
+        vref = vref < -dv_limit ? -dv_limit : vref;
     }
     foc->vref = vref;
     return 0;

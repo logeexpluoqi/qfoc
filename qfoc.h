@@ -152,13 +152,13 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
 
 /* FOC velocity/position current double loop pid control */
 /* di_limit is vloop or ploop  output limit*/
-int qfoc_vloop_update(QFoc *foc, float vupdate, float di_limit);
+int qfoc_vloop_update(QFoc *foc, float di_limit);
 
-int qfoc_ploop_update(QFoc *foc, float pupdate, float di_limit);
+int qfoc_ploop_update(QFoc *foc, float di_limit);
 
 /* FOC position velocity pid control */
 /* dv_limit is vploop  output limit*/
-int qfoc_vploop_update(QFoc *foc, float pupdate, float dv_limit);
+int qfoc_vploop_update(QFoc *foc, float dv_limit);
 
 /* FOC phase calibration, make id aligned to A axis */
 /* First call this api, and delay some time to record encoder positon, this position is the phase bias */
