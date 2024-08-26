@@ -99,6 +99,7 @@ typedef struct {
  * @brief: qfoc initialize
  * @param: motor, motor object, used to define a motor parameter
  * @param: pwm_max, pwm output max value
+ * @param: deadzone, deadzone, dead zone, unit A
  * @param: imax, current limit, unit A
  * @param: vmax, velocity limit, unit degree/s
  * @param: pmax, position max limit, unit degree
