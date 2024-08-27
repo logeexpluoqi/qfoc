@@ -54,6 +54,7 @@ typedef enum {
 typedef struct {
     QFocStatus status;
     QFocError err;
+    float ep;           // degree, encoder position
     float p;            // degree, position
     float v;            // degree/s, velocity
     float iq;           // A, q-axis current
@@ -134,7 +135,7 @@ int qfoc_i_update(QFoc *foc, float ia, float ib, float ic);
 
 int qfoc_v_update(QFoc *foc, float v);
 
-int qfoc_p_update(QFoc *foc, float p);
+int qfoc_p_update(QFoc *foc, float ep);
 
 /* FOC controller reference input set */
 int qfoc_iref_set(QFoc *foc, float iqref, float idref);

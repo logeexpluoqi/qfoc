@@ -432,13 +432,19 @@ int qfoc_v_update(QFoc *foc, float v)
     return 0;
 }
 
-int qfoc_p_update(QFoc *foc, float p)
+int qfoc_p_update(QFoc *foc, float ep)
 {
+    float p = ep / foc->motor->gear_ratio;
+    foc->ep = ep;
     if((foc->pmax != 0.0f) && (foc->pmin != 0.0f)) {
         if((p > foc->pmax) || (p < foc->pmin)) {
             foc->p = (p > foc->pmax) ? foc->pmax : ((p < foc->pmin) ? foc->pmin : p);
             foc->status = QFOC_STATUS_ERROR;
-            foc->err = QFOC_ERR_OPMAX;
+            if(p > foc->pmax) {
+                foc->err = QFOC_ERR_OPMAX;
+            } else {
+                foc->err = QFOC_ERR_OPMIN;
+            }
             return -1;
         }
     }
