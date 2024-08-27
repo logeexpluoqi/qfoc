@@ -553,39 +553,57 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
 /* FOC velocity/position current double loop pid control */
 int qfoc_vloop_update(QFoc *foc, float di_limit)
 {
-    float iref;
-    iref = pid_calc(&foc->pid_v, foc->vref - foc->v);
+    float iref = pid_calc(&foc->pid_p, foc->pref - foc->p);
+    float delta = iref - foc->iqref;
     if(di_limit != 0) {
-        iref = iref > di_limit ? di_limit : iref;
-        iref = iref < -di_limit ? -di_limit : iref;
+        if(delta > di_limit) {
+            foc->iqref += di_limit;
+        } else if(delta < -di_limit) {
+            foc->iqref -= di_limit;
+        } else {
+            foc->iqref = iref;
+        }
+    } else {
+        foc->iqref = iref;
+        foc->idref = 0;
     }
-    foc->iqref = iref;
-    foc->idref = 0;
     return 0;
 }
 
 int qfoc_ploop_update(QFoc *foc, float di_limit)
 {
-    float iref;
-    iref = pid_calc(&foc->pid_p, foc->pref - foc->p);
+    float iref = pid_calc(&foc->pid_p, foc->pref - foc->p);
+    float delta = iref - foc->iqref;
     if(di_limit != 0) {
-        iref = iref > di_limit ? di_limit : iref;
-        iref = iref < -di_limit ? -di_limit : iref;
+        if(delta > di_limit) {
+            foc->iqref += di_limit;
+        } else if(delta < -di_limit) {
+            foc->iqref -= di_limit;
+        } else {
+            foc->iqref = iref;
+        }
+    } else {
+        foc->iqref = iref;
+        foc->idref = 0;
     }
-    foc->iqref = iref;
-    foc->idref = 0;
     return 0;
 }
 
 int qfoc_vploop_update(QFoc *foc, float dv_limit)
 {
-    float vref;
-    vref = pid_calc(&foc->pid_p, foc->pref - foc->p);
+    float vref = pid_calc(&foc->pid_p, foc->pref - foc->p);
+    float delta = vref - foc->vref;
     if(dv_limit != 0) {
-        vref = vref > dv_limit ? dv_limit : vref;
-        vref = vref < -dv_limit ? -dv_limit : vref;
+        if(delta > dv_limit) {
+            foc->vref += dv_limit;
+        } else if(delta < -dv_limit) {
+            foc->vref -= dv_limit;
+        } else {
+            foc->vref = vref;
+        }
+    } else {
+        foc->vref = vref;
     }
-    foc->vref = vref;
     return 0;
 }
 
