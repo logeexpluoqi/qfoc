@@ -395,8 +395,9 @@ int qfoc_vbus_update(QFoc *foc, float vbus)
         foc->vbus = foc->vbus_max;
         foc->status = QFOC_STATUS_ERROR;
         foc->err = QFOC_ERR_OVBUS;
+    } else {
+        foc->vbus = vbus;
     }
-    foc->vbus = vbus;
     return 0;
 }
 
@@ -427,8 +428,9 @@ int qfoc_v_update(QFoc *foc, float v)
             foc->err = QFOC_ERR_OVMAX;
             return -1;
         }
+    } else {
+        foc->v = v;
     }
-    foc->v = v;
     return 0;
 }
 
