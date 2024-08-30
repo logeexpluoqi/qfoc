@@ -27,13 +27,15 @@ int enc_zero(Encoder *enc)
 
 int enc_update(Encoder *enc, float epos)
 {
+    float abs_epc;
     if(enc->dir == ENC_DIR_CCW) {
         epos = -epos;
     }
     enc->epc = epos - enc->epos;
+    abs_epc = enc->epc > 0.0f ? enc->epc : -enc->epc;
     enc->epos = epos;
     enc->p = (epos - enc->eorg) * enc->unit;
-    if(enc->epc < (0.001f * enc->nms * enc->ppr)) {
+    if(abs_epc < (0.001f * enc->nms * enc->ppr)) {
         enc->tcnt++;
         enc->tmc += enc->epc;
         if(enc->tcnt > enc->tcnt_th) {
