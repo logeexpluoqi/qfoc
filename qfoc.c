@@ -438,7 +438,7 @@ int qfoc_p_update(QFoc *foc, float ep)
 {
     float p = ep / foc->motor->gear_ratio;
     foc->ep = ep;
-    if((foc->pmax != 0.0f) && (foc->pmin != 0.0f)) {
+    if((foc->pmax != 0.0f) || (foc->pmin != 0.0f)) {
         if((p > foc->pmax) || (p < foc->pmin)) {
             foc->p = (p > foc->pmax) ? foc->pmax : ((p < foc->pmin) ? foc->pmin : p);
             foc->status = QFOC_STATUS_ERROR;
@@ -450,7 +450,7 @@ int qfoc_p_update(QFoc *foc, float ep)
             return -1;
         }
     }
-    foc->edegree = _fmodf(p * foc->motor->poles_pairs, 360.0f);
+    foc->edegree = _fmodf(ep * foc->motor->poles_pairs, 360.0f);
     if(foc->edegree < 0.0f) {
         foc->edegree += 360.0f;
     }
