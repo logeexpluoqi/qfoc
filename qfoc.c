@@ -556,7 +556,7 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
 int qfoc_vloop_update(QFoc *foc, float di_limit)
 {
     float iref = pid_calc(&foc->pid_p, foc->pref - foc->p);
-    float delta = iref - foc->iqref;
+    float delta = iref - foc->iq;
     if(di_limit != 0) {
         if(delta > di_limit) {
             foc->iqref += di_limit;
@@ -575,7 +575,7 @@ int qfoc_vloop_update(QFoc *foc, float di_limit)
 int qfoc_ploop_update(QFoc *foc, float di_limit)
 {
     float iref = pid_calc(&foc->pid_p, foc->pref - foc->p);
-    float delta = iref - foc->iqref;
+    float delta = iref - foc->iq;
     if(di_limit != 0) {
         if(delta > di_limit) {
             foc->iqref += di_limit;
@@ -594,7 +594,7 @@ int qfoc_ploop_update(QFoc *foc, float di_limit)
 int qfoc_vploop_update(QFoc *foc, float dv_limit)
 {
     float vref = pid_calc(&foc->pid_p, foc->pref - foc->p);
-    float delta = vref - foc->vref;
+    float delta = vref - foc->v;
     if(dv_limit != 0) {
         if(delta > dv_limit) {
             foc->vref += dv_limit;
