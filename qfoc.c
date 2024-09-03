@@ -326,13 +326,27 @@ int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, flo
     return ret;
 }
 
+int qfoc_algo_iqd_set(QFoc *foc, int (*algo)(void *states, float *iq, float *id))
+{
+    foc->algo_iqd = algo;
+    return 0;
+}   
+
+int qfoc_algo_p_set(QFoc *foc, float (*algo)(void *states))
+{
+    foc->algo_p = algo;
+    return 0;
+}
+
+int qfoc_algo_v_set(QFoc *foc, float (*algo)(void *states))
+{
+    foc->algo_v = algo;
+    return 0;
+}
+
 int qfoc_enable(QFoc *foc, QFocEnable ena)
 {
     if(ena == QFOC_ENABLE) {
-        pid_clear(&foc->pid_p);
-        pid_clear(&foc->pid_v);
-        pid_clear(&foc->pid_iq);
-        pid_clear(&foc->pid_id);
         foc->iqref = 0.0f;
         foc->idref = 0.0f;
         foc->vref = 0.0f;
@@ -344,49 +358,6 @@ int qfoc_enable(QFoc *foc, QFocEnable ena)
     }
 
     return 0;
-}
-
-int qfoc_ppid_init(QFoc *foc, float kp, float ki, float kd)
-{
-    return pid_init(&foc->pid_p, kp, ki, kd, foc->vmax);
-}
-
-int qfoc_vpid_init(QFoc *foc, float kp, float ki, float kd)
-{
-    return pid_init(&foc->pid_v, kp, ki, kd, foc->imax);
-}
-
-int qfoc_iqpid_init(QFoc *foc, float kp, float ki, float kd)
-{
-    return pid_init(&foc->pid_iq, kp, ki, kd, foc->imax);
-}
-
-int qfoc_idpid_init(QFoc *foc, float kp, float ki, float kd)
-{
-    return pid_init(&foc->pid_id, kp, ki, kd, foc->imax);
-}
-
-int qfoc_ppid_set(QFoc *foc, float kp, float ki, float kd)
-{
-    return pid_param_set(&foc->pid_p, kp, ki, kd);
-}
-
-int qfoc_vpid_set(QFoc *foc, float kp, float ki, float kd)
-{
-    pid_calc_clear(&foc->pid_v);
-    return pid_param_set(&foc->pid_v, kp, ki, kd);
-}
-
-int qfoc_iqpid_set(QFoc *foc, float kp, float ki, float kd)
-{
-    pid_calc_clear(&foc->pid_iq);
-    return pid_param_set(&foc->pid_iq, kp, ki, kd);
-}
-
-int qfoc_idpid_set(QFoc *foc, float kp, float ki, float kd)
-{
-    pid_calc_clear(&foc->pid_id);
-    return pid_param_set(&foc->pid_id, kp, ki, kd);
 }
 
 int qfoc_vbus_update(QFoc *foc, float vbus)
@@ -535,8 +506,7 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
         return -1;
     }
 
-    iq = pid_calc(&foc->pid_iq, foc->iqref - foc->iq);
-    id = pid_calc(&foc->pid_id, foc->idref - foc->id);
+    foc->algo_iqd(foc, &iq, &id);
     if(foc->deadzone != 0.0f) {
         iq = ((iq < 0.0f) && (iq > -foc->deadzone)) ? -foc->deadzone : ((iq > 0.0f) && (iq < foc->deadzone)) ? foc->deadzone : iq;
     }
@@ -555,7 +525,7 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
 /* FOC velocity/position current double loop pid control */
 int qfoc_vloop_update(QFoc *foc, float di_limit)
 {
-    float iref = pid_calc(&foc->pid_p, foc->pref - foc->p);
+    float iref = foc->algo_v(foc);
     float delta = iref - foc->iq;
     if(di_limit != 0) {
         if(delta > di_limit) {
@@ -574,7 +544,7 @@ int qfoc_vloop_update(QFoc *foc, float di_limit)
 
 int qfoc_ploop_update(QFoc *foc, float di_limit)
 {
-    float iref = pid_calc(&foc->pid_p, foc->pref - foc->p);
+    float iref = foc->algo_p(foc);
     float delta = iref - foc->iq;
     if(di_limit != 0) {
         if(delta > di_limit) {
@@ -593,7 +563,7 @@ int qfoc_ploop_update(QFoc *foc, float di_limit)
 
 int qfoc_vploop_update(QFoc *foc, float dv_limit)
 {
-    float vref = pid_calc(&foc->pid_p, foc->pref - foc->p);
+    float vref = foc->algo_p(foc);
     float delta = vref - foc->v;
     if(dv_limit != 0) {
         if(delta > dv_limit) {

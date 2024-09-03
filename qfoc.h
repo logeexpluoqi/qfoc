@@ -10,7 +10,6 @@
 #define _QFOC_H
 
 #include <stdint.h>
-#include "pid.h"
 
 typedef struct {
     uint8_t poles_pairs;
@@ -90,10 +89,9 @@ typedef struct {
     float vbus_max;     // V, power supply voltage max
     PmsmMotor *motor;
     
-    PidObj pid_p;
-    PidObj pid_v;
-    PidObj pid_iq;
-    PidObj pid_id;
+    int (*algo_iqd)(void *states, float *iq, float *id); // iq and id loop algorithm, return target iq and id
+    float (*algo_p)(void *states); // position loop algorithm
+    float (*algo_v)(void *states); // velocity loop algorithm
 } QFoc;
 
 /**
@@ -109,23 +107,27 @@ typedef struct {
  */
 int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, float deadzone, float imax, float vmax, float pmax, float pmin);
 
+/**
+ * FOC close loop algorithm.
+ * Current loop, velocity loop and postion loop control algorithm
+ * need to complete by users, and regist these algorithm to this qfoc frame.
+ * qfoc frame will auto-callback these algorithm in loop calculate or update
+ * functions. and qfoc frame will auto put foc structure into these algorithm,
+ * @param: states, foc structure by defaulte or user-defined parameters, if 
+ *          using user-defined states, algo_function input states will be ignored.
+ * @return: algo_iqd will output target iq value and target id value, its be
+ *          used in qfoc_iloop_calc funciton.
+ *          algo_p and algo_v will return position loop and velocity loop outputs,
+ *          and called by qfoc_ploop_update, qfoc_vloop_update and qfoc_vploop_update
+ *          function. 
+ */
+int qfoc_algo_iqd_set(QFoc *foc, int (*algo)(void *states, float *iq, float *id));
+
+int qfoc_algo_p_set(QFoc *foc, float (*algo)(void *states));
+
+int qfoc_algo_v_set(QFoc *foc, float (*algo)(void *states));
+
 int qfoc_enable(QFoc *foc, QFocEnable ena);
-
-int qfoc_ppid_init(QFoc *foc, float kp, float ki, float kd);
-
-int qfoc_vpid_init(QFoc *foc, float kp, float ki, float kd);
-
-int qfoc_iqpid_init(QFoc *foc, float kp, float ki, float kd);
-
-int qfoc_idpid_init(QFoc *foc, float kp, float ki, float kd);
-
-int qfoc_ppid_set(QFoc *foc, float kp, float ki, float kd);
-
-int qfoc_vpid_set(QFoc *foc, float kp, float ki, float kd);
-
-int qfoc_iqpid_set(QFoc *foc, float kp, float ki, float kd);
-
-int qfoc_idpid_set(QFoc *foc, float kp, float ki, float kd);
 
 /* FOC update state from vbus/current/velocity/postion sensors */
 /* These update api can return foc statu, include errors */
