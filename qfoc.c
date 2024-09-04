@@ -399,9 +399,8 @@ int qfoc_v_update(QFoc *foc, float v)
             foc->err = QFOC_ERR_OVMAX;
             return -1;
         }
-    } else {
-        foc->v = v;
-    }
+    } 
+    foc->v = v;
     return 0;
 }
 
