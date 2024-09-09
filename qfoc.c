@@ -372,6 +372,14 @@ int qfoc_vbus_update(QFoc *foc, float vbus)
     return 0;
 }
 
+int qfoc_bef_update(QFoc *foc, float befa, float befb, float befc)
+{
+    foc->befa = befa;
+    foc->befb = befb;
+    foc->befc = befc;
+    return 0;
+}
+
 int qfoc_i_update(QFoc *foc, float ia, float ib, float ic)
 {
     float alpha, beta;

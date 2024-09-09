@@ -79,6 +79,10 @@ typedef struct {
     float imax;         // A
     float vmax;         // degree/s
 
+    float befa;         // V, back electomotive foce
+    float befb;
+    float befc;
+
     /* if pmax and pmin is 0.0f, means position no limit */
     float pmax;         // degree
     float pmin;         // degree
@@ -132,6 +136,8 @@ int qfoc_enable(QFoc *foc, QFocEnable ena);
 /* FOC update state from vbus/current/velocity/postion sensors */
 /* These update api can return foc statu, include errors */
 int qfoc_vbus_update(QFoc *foc, float vbus);
+
+int qfoc_bef_update(QFoc *foc, float befa, float befb, float befc);
 
 int qfoc_i_update(QFoc *foc, float ia, float ib, float ic);
 
