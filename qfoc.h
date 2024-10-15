@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2024-08-16 21:06
+ * @ Modified time: 2024-10-15 22:25
  * @ Description:
  */
 
@@ -47,6 +47,7 @@ typedef enum {
     QFOC_ERR_OPMAX,         // over position max limit
     QFOC_ERR_OPMIN,         // over position min limit
     QFOC_ERR_OVBUS,         // over vbus limit
+    QFOC_ERR_OPWR,          // over pwoer limit
     QFOC_ERR_MOTOR_PARAM,   // motor parameter error
 } QFocError;
 
@@ -79,10 +80,6 @@ typedef struct {
     float imax;         // A
     float vmax;         // degree/s
 
-    float befa;         // V, back electomotive foce
-    float befb;
-    float befc;
-
     /* if pmax and pmin is 0.0f, means position no limit */
     float pmax;         // degree
     float pmin;         // degree
@@ -91,6 +88,10 @@ typedef struct {
     float deadzone;     // dead zone, unit A
     
     float vbus_max;     // V, power supply voltage max
+    float i2t_limit;    // A, current to power; unit i * i * t, A^2s
+    float i2t;          // W, power
+    uint32_t integral_times;    // i2t(power) integral 500ms times
+    uint32_t integral_cnt;      // integral counter
     PmsmMotor *motor;
     
     int (*algo_iqd)(void *states, float *iq, float *id); // iq and id loop algorithm, return target iq and id
@@ -102,6 +103,9 @@ typedef struct {
  * @brief: qfoc initialize
  * @param: motor, motor object, used to define a motor parameter
  * @param: pwm_max, pwm output max value
+ * @param: i2t_limit, current to power limit, unit i * i * t, A^2s
+ * @param: i2t_period, current to power period, unit ms
+ * @param: period, iloop period, unit ms
  * @param: deadzone, deadzone, dead zone, unit A
  * @param: imax, current limit, unit A
  * @param: vmax, velocity limit, unit degree/s
@@ -109,7 +113,7 @@ typedef struct {
  * @param: pmin, position min limit, unit degree
  * @return: QFocStatus
  */
-int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, float deadzone, float imax, float vmax, float pmax, float pmin);
+int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, float i2t_limit, float i2t_period, float iloop_period, float deadzone, float imax, float vmax, float pmax, float pmin);
 
 /**
  * FOC close loop algorithm.
@@ -137,13 +141,15 @@ int qfoc_enable(QFoc *foc, QFocEnable ena);
 /* These update api can return foc statu, include errors */
 int qfoc_vbus_update(QFoc *foc, float vbus);
 
-int qfoc_bef_update(QFoc *foc, float befa, float befb, float befc);
-
 int qfoc_i_update(QFoc *foc, float ia, float ib, float ic);
 
 int qfoc_v_update(QFoc *foc, float v);
 
-int qfoc_p_update(QFoc *foc, float ep);
+int qfoc_p_update(QFoc *foc, float p);
+
+/* ep is encoder positon, p is a consecutive position */
+/* if ep range is 0-n degree, p must not NAN, or P must be a NAN */
+int qfoc_ep_update(QFoc *foc, float ep, float p);
 
 /* FOC controller reference input set */
 int qfoc_iref_set(QFoc *foc, float iqref, float idref);

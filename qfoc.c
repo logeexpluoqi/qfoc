@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2024-08-16 23:23
+ * @ Modified time: 2024-10-15 22:26
  * @ Description:
  */
 
@@ -275,7 +275,7 @@ static int _qsvm_calc(float vbus, float q, float d, float edegree, float *ta, fl
 
 
 
-int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, float deadzone, float imax, float vmax, float pmax, float pmin)
+int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, float i2t_limit, float i2t_period, float iloop_period, float deadzone, float imax, float vmax, float pmax, float pmin)
 {
     int ret = 0;
     _memset(foc, 0, sizeof(QFoc));
@@ -310,6 +310,8 @@ int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, flo
         foc->err = QFOC_ERR_MOTOR_PARAM;
         ret = -1;
     }
+    foc->i2t_limit = i2t_limit;
+    foc->integral_times = (uint32_t)(i2t_period / iloop_period);
     foc->pwm_max = pwm_max;
     foc->vbus_max = vbus_max;
     foc->vmax = _rpm2deg(vmax);
@@ -372,14 +374,6 @@ int qfoc_vbus_update(QFoc *foc, float vbus)
     return 0;
 }
 
-int qfoc_bef_update(QFoc *foc, float befa, float befb, float befc)
-{
-    foc->befa = befa;
-    foc->befb = befb;
-    foc->befc = befc;
-    return 0;
-}
-
 int qfoc_i_update(QFoc *foc, float ia, float ib, float ic)
 {
     float alpha, beta;
@@ -387,6 +381,16 @@ int qfoc_i_update(QFoc *foc, float ia, float ib, float ic)
     foc->ib = ib;
     foc->ic = ic;
     _clarke_transform(ia, ib, ic, &alpha, &beta);
+
+    if(foc->integral_cnt++ > foc->integral_times) {
+        foc->integral_cnt = 0;
+        foc->i2t = foc->iq * foc->iq * 0.5f + foc->id * foc->id * 0.5f;
+        if(foc->i2t > foc->i2t_limit) {
+            foc->status = QFOC_STATUS_ERROR;
+            foc->err = QFOC_ERR_OPWR;
+        }
+    }
+
     _park_transform(alpha, beta, foc->edegree, &foc->iq, &foc->id);
     if((foc->iq > foc->imax) || (foc->iq < -foc->imax) || (foc->id > foc->imax) || (foc->id < -foc->imax)) {
         foc->iq = (foc->iq > foc->imax) ? foc->imax : ((foc->iq < -foc->imax) ? -foc->imax : foc->iq);
@@ -412,9 +416,30 @@ int qfoc_v_update(QFoc *foc, float v)
     return 0;
 }
 
-int qfoc_p_update(QFoc *foc, float ep)
+int qfoc_p_update(QFoc *foc, float p)
 {
-    float p = ep / foc->motor->gear_ratio;
+    if((foc->pmax != 0.0f) || (foc->pmin != 0.0f)) {
+        if((p > foc->pmax) || (p < foc->pmin)) {
+            foc->p = (p > foc->pmax) ? foc->pmax : ((p < foc->pmin) ? foc->pmin : p);
+            foc->status = QFOC_STATUS_ERROR;
+            if(p > foc->pmax) {
+                foc->err = QFOC_ERR_OPMAX;
+            } else {
+                foc->err = QFOC_ERR_OPMIN;
+            }
+            return -1;
+        }
+    }
+    foc->edegree = _fmodf(p * foc->motor->poles_pairs, 360.0f);
+    if(foc->edegree < 0.0f) {
+        foc->edegree += 360.0f;
+    }
+    foc->p = p * foc->motor->gear_ratio;
+    return 0;
+}
+
+int qfoc_ep_update(QFoc *foc, float ep, float p)
+{
     foc->ep = ep;
     if((foc->pmax != 0.0f) || (foc->pmin != 0.0f)) {
         if((p > foc->pmax) || (p < foc->pmin)) {
@@ -432,7 +457,7 @@ int qfoc_p_update(QFoc *foc, float ep)
     if(foc->edegree < 0.0f) {
         foc->edegree += 360.0f;
     }
-    foc->p = p;
+    foc->p = p / foc->motor->gear_ratio;
     return 0;
 }
 
