@@ -328,21 +328,21 @@ int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, flo
     return ret;
 }
 
-int qfoc_algo_iqd_set(QFoc *foc, int (*algo)(void *states, float *iq, float *id))
+int qfoc_iloop_controller_set(QFoc *foc, int (*controller)(void *states, float *iq, float *id))
 {
-    foc->algo_iqd = algo;
+    foc->iloop_controller = controller;
     return 0;
 }   
 
-int qfoc_algo_p_set(QFoc *foc, float (*algo)(void *states))
+int qfoc_ploop_controller_set(QFoc *foc, float (*controller)(void *states))
 {
-    foc->algo_p = algo;
+    foc->ploop_controller = controller;
     return 0;
 }
 
-int qfoc_algo_v_set(QFoc *foc, float (*algo)(void *states))
+int qfoc_vloop_controller_set(QFoc *foc, float (*controller)(void *states))
 {
-    foc->algo_v = algo;
+    foc->vloop_controller = controller;
     return 0;
 }
 
@@ -538,7 +538,7 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
         return -1;
     }
 
-    foc->algo_iqd(foc, &iq, &id);
+    foc->iloop_controller(foc, &iq, &id);
     if(foc->deadzone != 0.0f) {
         iq = ((iq < 0.0f) && (iq > -foc->deadzone)) ? -foc->deadzone : ((iq > 0.0f) && (iq < foc->deadzone)) ? foc->deadzone : iq;
     }
@@ -557,7 +557,7 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
 /* FOC velocity/position current double loop pid control */
 int qfoc_vloop_update(QFoc *foc, float di_limit)
 {
-    float iref = foc->algo_v(foc);
+    float iref = foc->vloop_controller(foc);
     float delta = iref - foc->iq;
     if(di_limit != 0) {
         if(delta > di_limit) {
@@ -576,7 +576,7 @@ int qfoc_vloop_update(QFoc *foc, float di_limit)
 
 int qfoc_ploop_update(QFoc *foc, float di_limit)
 {
-    float iref = foc->algo_p(foc);
+    float iref = foc->ploop_controller(foc);
     float delta = iref - foc->iq;
     if(di_limit != 0) {
         if(delta > di_limit) {
@@ -595,7 +595,7 @@ int qfoc_ploop_update(QFoc *foc, float di_limit)
 
 int qfoc_vploop_update(QFoc *foc, float dv_limit)
 {
-    float vref = foc->algo_p(foc);
+    float vref = foc->ploop_controller(foc);
     float delta = vref - foc->v;
     if(dv_limit != 0) {
         if(delta > dv_limit) {

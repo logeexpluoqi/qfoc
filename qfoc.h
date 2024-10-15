@@ -94,9 +94,9 @@ typedef struct {
     uint32_t integral_cnt;      // integral counter
     PmsmMotor *motor;
     
-    int (*algo_iqd)(void *states, float *iq, float *id); // iq and id loop algorithm, return target iq and id
-    float (*algo_p)(void *states); // position loop algorithm
-    float (*algo_v)(void *states); // velocity loop algorithm
+    int (*iloop_controller)(void *states, float *iq, float *id); // iq and id loop algorithm, return target iq and id
+    float (*ploop_controller)(void *states); // position loop algorithm
+    float (*vloop_controller)(void *states); // velocity loop algorithm
 } QFoc;
 
 /**
@@ -123,17 +123,17 @@ int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, flo
  * functions. and qfoc frame will auto put foc structure into these algorithm,
  * @param: states, foc structure by defaulte or user-defined parameters, if 
  *          using user-defined states, algo_function input states will be ignored.
- * @return: algo_iqd will output target iq value and target id value, its be
+ * @return: iloop_controller will output target iq value and target id value, its be
  *          used in qfoc_iloop_calc funciton.
- *          algo_p and algo_v will return position loop and velocity loop outputs,
+ *          ploop_controller and vloop_controller will return position loop and velocity loop outputs,
  *          and called by qfoc_ploop_update, qfoc_vloop_update and qfoc_vploop_update
  *          function. 
  */
-int qfoc_algo_iqd_set(QFoc *foc, int (*algo)(void *states, float *iq, float *id));
+int qfoc_iloop_controller_set(QFoc *foc, int (*controller)(void *states, float *iq, float *id));
 
-int qfoc_algo_p_set(QFoc *foc, float (*algo)(void *states));
+int qfoc_ploop_controller_set(QFoc *foc, float (*controller)(void *states));
 
-int qfoc_algo_v_set(QFoc *foc, float (*algo)(void *states));
+int qfoc_vloop_controller_set(QFoc *foc, float (*controller)(void *states));
 
 int qfoc_enable(QFoc *foc, QFocEnable ena);
 
