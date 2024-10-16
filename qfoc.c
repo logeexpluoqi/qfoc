@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2024-10-15 22:26
+ * @ Modified time: 2024-10-16 15:53
  * @ Description:
  */
 
@@ -382,9 +382,11 @@ int qfoc_i_update(QFoc *foc, float ia, float ib, float ic)
     foc->ic = ic;
     _clarke_transform(ia, ib, ic, &alpha, &beta);
 
+    foc->i2t_buf += (foc->iq * foc->iq + foc->id * foc->id);
     if(foc->integral_cnt++ > foc->integral_times) {
+        foc->i2t = foc->i2t_buf / foc->integral_times;
         foc->integral_cnt = 0;
-        foc->i2t = foc->iq * foc->iq * 0.5f + foc->id * foc->id * 0.5f;
+        foc->i2t_buf = 0.0f;
         if(foc->i2t > foc->i2t_limit) {
             foc->status = QFOC_STATUS_ERROR;
             foc->err = QFOC_ERR_OPWR;

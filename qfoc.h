@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2024-10-15 22:25
+ * @ Modified time: 2024-10-16 15:51
  * @ Description:
  */
 
@@ -89,7 +89,8 @@ typedef struct {
     
     float vbus_max;     // V, power supply voltage max
     float i2t_limit;    // A, current to power; unit i * i * t, A^2s
-    float i2t;          // W, power
+    float i2t;          // W, average power in a period
+    float i2t_buf;      // W, average power in a period buffer, used to calculate i2t
     uint32_t integral_times;    // i2t(power) integral 500ms times
     uint32_t integral_cnt;      // integral counter
     PmsmMotor *motor;
@@ -105,7 +106,7 @@ typedef struct {
  * @param: pwm_max, pwm output max value
  * @param: i2t_limit, current to power limit, unit i * i * t, A^2s
  * @param: i2t_period, current to power period, unit ms
- * @param: period, iloop period, unit ms
+ * @param: iloop_period, iloop period, unit ms
  * @param: deadzone, deadzone, dead zone, unit A
  * @param: imax, current limit, unit A
  * @param: vmax, velocity limit, unit degree/s
