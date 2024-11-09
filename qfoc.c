@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2024-10-16 15:53
+ * @ Modified time: 2024-11-09 22:56
  * @ Description:
  */
 
@@ -549,10 +549,10 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
     foc->pwma = (uint16_t)(ta * foc->pwm_max);
     foc->pwmb = (uint16_t)(tb * foc->pwm_max);
     foc->pwmc = (uint16_t)(tc * foc->pwm_max);
-
-    *pwma = foc->pwma;
-    *pwmb = foc->pwmb;
-    *pwmc = foc->pwmc;
+    
+    *pwma = foc->pwma > foc->pwm_max ? foc->pwm_max : foc->pwma;
+    *pwmb = foc->pwmb > foc->pwm_max ? foc->pwm_max : foc->pwmb;
+    *pwmc = foc->pwmc > foc->pwm_max ? foc->pwm_max : foc->pwmc;
     return 0;
 }
 
