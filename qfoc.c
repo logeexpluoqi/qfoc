@@ -596,6 +596,7 @@ int qfoc_calib_calc(QFoc *foc, float idmax, float pref, uint16_t *pwma, uint16_t
     int ret;
     float ta, tb, tc;
     foc->sector = 0;
+    float edegree = _fmodf(pref * foc->motor->poles_pairs, 360.0f);
     ret = _qsvm_calc(foc->vbus, 0.0f, idmax, pref * foc->motor->poles_pairs, &ta, &tb, &tc);
     *pwma = (uint16_t)(ta * foc->pwm_max);
     *pwmb = (uint16_t)(tb * foc->pwm_max);
