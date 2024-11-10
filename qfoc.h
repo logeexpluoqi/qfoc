@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2024-10-16 15:51
+ * @ Modified time: 2024-11-10 15:01
  * @ Description:
  */
 
@@ -90,9 +90,9 @@ typedef struct {
     float vbus_max;     // V, power supply voltage max
     float i2t_limit;    // A, current to power; unit i * i * t, A^2s
     float i2t;          // W, average power in a period
-    float i2t_buf;      // W, average power in a period buffer, used to calculate i2t
-    uint32_t integral_times;    // i2t(power) integral 500ms times
-    uint32_t integral_cnt;      // integral counter
+    float ipower;       // average power in a period buffer, ipower += sqrt(iq * iq + id * id), in a iloop period
+    uint32_t i2t_times;    // i2t(power) integral times
+    uint32_t i2t_cnt;      // integral counter
     PmsmMotor *motor;
     
     int (*iloop_controller)(void *states, float *iq, float *id); // iq and id loop algorithm, return target iq and id
@@ -105,7 +105,7 @@ typedef struct {
  * @param: motor, motor object, used to define a motor parameter
  * @param: pwm_max, pwm output max value
  * @param: i2t_limit, current to power limit, unit i * i * t, A^2s
- * @param: i2t_period, current to power period, unit ms
+ * @param: i2t_times, current to power calculate times in iloop 
  * @param: iloop_period, iloop period, unit ms
  * @param: deadzone, deadzone, dead zone, unit A
  * @param: imax, current limit, unit A
@@ -114,7 +114,7 @@ typedef struct {
  * @param: pmin, position min limit, unit degree
  * @return: QFocStatus
  */
-int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, float i2t_limit, float i2t_period, float iloop_period, float deadzone, float imax, float vmax, float pmax, float pmin);
+int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, float i2t_limit, uint32_t i2t_times, float deadzone, float imax, float vmax, float pmax, float pmin);
 
 /**
  * FOC close loop algorithm.
@@ -146,11 +146,8 @@ int qfoc_i_update(QFoc *foc, float ia, float ib, float ic);
 
 int qfoc_v_update(QFoc *foc, float v);
 
-int qfoc_p_update(QFoc *foc, float p);
-
-/* ep is encoder positon, p is a consecutive position */
-/* if ep range is 0-n degree, p must not NAN, or P must be a NAN */
-int qfoc_ep_update(QFoc *foc, float ep, float p);
+/* ep is encoder positon update */
+int qfoc_ep_update(QFoc *foc, float ep);
 
 /* FOC controller reference input set */
 int qfoc_iref_set(QFoc *foc, float iqref, float idref);
@@ -179,6 +176,7 @@ int qfoc_vploop_update(QFoc *foc, float dv_limit);
 
 /* FOC phase calibration, make id aligned to A axis */
 /* First call this api, and delay some time to record encoder positon, this position is the phase bias */
-int qfoc_phase_calib(QFoc *foc, float idmax, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
+/* Its also can be used in encoder caliberation */
+int qfoc_calib_calc(QFoc *foc, float idmax, float pref, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
 
 #endif
