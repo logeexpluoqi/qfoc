@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2024-11-10 15:01
+ * @ Modified time: 2024-11-12 17:22
  * @ Description:
  */
 
@@ -535,15 +535,15 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
 }
 
 /* FOC velocity/position current double loop pid control */
-int qfoc_vloop_update(QFoc *foc, float di_limit)
+int qfoc_vloop_update(QFoc *foc, float dimax)
 {
     float iref = foc->vloop_controller(foc);
-    float delta = iref - foc->iq;
-    if(di_limit != 0) {
-        if(delta > di_limit) {
-            foc->iqref += di_limit;
-        } else if(delta < -di_limit) {
-            foc->iqref -= di_limit;
+    float di = iref - foc->iq;
+    if(dimax != 0) {
+        if(di > dimax) {
+            foc->iqref += dimax;
+        } else if(di < -dimax) {
+            foc->iqref -= dimax;
         } else {
             foc->iqref = iref;
         }
@@ -554,15 +554,15 @@ int qfoc_vloop_update(QFoc *foc, float di_limit)
     return 0;
 }
 
-int qfoc_ploop_update(QFoc *foc, float di_limit)
+int qfoc_ploop_update(QFoc *foc, float dimax)
 {
     float iref = foc->ploop_controller(foc);
-    float delta = iref - foc->iq;
-    if(di_limit != 0) {
-        if(delta > di_limit) {
-            foc->iqref += di_limit;
-        } else if(delta < -di_limit) {
-            foc->iqref -= di_limit;
+    float di = iref - foc->iq;
+    if(dimax != 0) {
+        if(di > dimax) {
+            foc->iqref += dimax;
+        } else if(di < -dimax) {
+            foc->iqref -= dimax;
         } else {
             foc->iqref = iref;
         }
@@ -573,15 +573,15 @@ int qfoc_ploop_update(QFoc *foc, float di_limit)
     return 0;
 }
 
-int qfoc_vploop_update(QFoc *foc, float dv_limit)
+int qfoc_vploop_update(QFoc *foc, float dvmax)
 {
     float vref = foc->ploop_controller(foc);
-    float delta = vref - foc->v;
-    if(dv_limit != 0) {
-        if(delta > dv_limit) {
-            foc->vref += dv_limit;
-        } else if(delta < -dv_limit) {
-            foc->vref -= dv_limit;
+    float dv = vref - foc->v;
+    if(dvmax != 0) {
+        if(dv > dvmax) {
+            foc->vref += dvmax;
+        } else if(dv < -dvmax) {
+            foc->vref -= dvmax;
         } else {
             foc->vref = vref;
         }
@@ -597,7 +597,7 @@ int qfoc_calib_calc(QFoc *foc, float idmax, float pref, uint16_t *pwma, uint16_t
     float ta, tb, tc;
     foc->sector = 0;
     float edegree = _fmodf(pref * foc->motor->poles_pairs, 360.0f);
-    ret = _qsvm_calc(foc->vbus, 0.0f, idmax, pref * foc->motor->poles_pairs, &ta, &tb, &tc);
+    ret = _qsvm_calc(foc->vbus, 0.0f, idmax, edegree, &ta, &tb, &tc);
     *pwma = (uint16_t)(ta * foc->pwm_max);
     *pwmb = (uint16_t)(tb * foc->pwm_max);
     *pwmc = (uint16_t)(tc * foc->pwm_max);

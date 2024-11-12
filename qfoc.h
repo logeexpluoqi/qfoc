@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2024-11-10 15:01
+ * @ Modified time: 2024-11-12 17:19
  * @ Description:
  */
 
@@ -165,14 +165,14 @@ int qfoc_oloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
 int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
 
 /* FOC velocity/position current double loop pid control */
-/* di_limit is vloop or ploop  output limit*/
-int qfoc_vloop_update(QFoc *foc, float di_limit);
+/* dimax is vloop or ploop  output limit*/
+int qfoc_vloop_update(QFoc *foc, float dimax);
 
-int qfoc_ploop_update(QFoc *foc, float di_limit);
+int qfoc_ploop_update(QFoc *foc, float dimax);
 
 /* FOC position velocity pid control */
-/* dv_limit is vploop  output limit*/
-int qfoc_vploop_update(QFoc *foc, float dv_limit);
+/* dvmax is vploop  output limit*/
+int qfoc_vploop_update(QFoc *foc, float dvmax);
 
 /* FOC phase calibration, make id aligned to A axis */
 /* First call this api, and delay some time to record encoder positon, this position is the phase bias */
