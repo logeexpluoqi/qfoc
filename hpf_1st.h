@@ -25,6 +25,8 @@ int hpf_1st_init(Hpf1stObj *filter, float fc, float ts);
 
 float hpf_1st_calcu(Hpf1stObj *filter, float u_k);
 
+int hpf_1st_fc_set(Hpf1stObj *filter, float fc);
+
 #ifdef __cplusplus
  }
 #endif
