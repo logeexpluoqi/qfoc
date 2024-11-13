@@ -25,10 +25,10 @@ int lpf_1st_init(Lpf1stObj *filter, float fc, float ts);
 int lpf_1st_fc_set(Lpf1stObj *filter, float fc);
 
 /* ts is  time-constant */
-float lpf_1st_calc(Lpf1stObj *filter, float u_k);
+float lpf_1st_calc(Lpf1stObj *filter, float uk);
 
 /* ts is time-varying */
-float lpf_1st_kcalc(Lpf1stObj *filter, float u_k, float ts);
+float lpf_1st_kcalc(Lpf1stObj *filter, float uk, float ts);
 
 #ifdef __cplusplus
  }

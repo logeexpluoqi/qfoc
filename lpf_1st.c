@@ -25,18 +25,18 @@ int lpf_1st_fc_set(Lpf1stObj *filter, float fc)
     return 0;
 }
 
-float lpf_1st_calc(Lpf1stObj *filter, float u_k)
+float lpf_1st_calc(Lpf1stObj *filter, float uk)
 {
-    float y_k = filter->alpha * u_k + (1 - filter->alpha) * filter->y_k1;
+    float y_k = filter->alpha * uk + (1 - filter->alpha) * filter->y_k1;
     filter->y_k1 = y_k;
 
     return y_k;
 }
 
-float lpf_1st_kcalc(Lpf1stObj *filter, float u_k, float ts)
+float lpf_1st_kcalc(Lpf1stObj *filter, float uk, float ts)
 {
     float alpha = (2 * LPF_PI * ts * filter->fc) / (1 + 2 * LPF_PI * ts * filter->fc);
-    float y_k = alpha * u_k + (1 - alpha) * filter->y_k1;
+    float y_k = alpha * uk + (1 - alpha) * filter->y_k1;
     filter->y_k1 = y_k;
     return y_k;
 }
