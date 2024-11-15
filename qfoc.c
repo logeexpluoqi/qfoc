@@ -49,9 +49,9 @@ static const float _QFOC_2_BY_3 = 0.666666666666667f;
 #define _QFOC_MAX(x, y)  ((x) >= (y) ? (x) : (y))
 #define _QFOC_MIN(x, y)  ((x) <= (y) ? (x) : (y))
 
-const float _QFOC_FSIN_MAGIC = 0.017453292519943295769236907684886f;
+static const float _QFOC_FSIN_MAGIC = 0.017453292519943295769236907684886f;
 
-const float _sin_table[] = {
+static const float _sin_table[] = {
     0.0,                                    // sin(0)
     0.17364817766693034885171662676931 ,    // sin(10)
     0.34202014332566873304409961468226 ,    // sin(20)
@@ -64,7 +64,7 @@ const float _sin_table[] = {
     1.0                                     // sin(90)
 };
 
-const float _cos_table[] = {
+static const float _cos_table[] = {
     1.0 ,                                   // cos(0)
     0.99984769515639123915701155881391 ,    // cos(1)
     0.99939082701909573000624344004393 ,    // cos(2)
