@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-07-22 15:37
  * @ Modified by: luoqi
- * @ Modified time: 2024-11-13 15:08
+ * @ Modified time: 2024-11-15 17:22
  * @ Description:
  */
 
@@ -13,10 +13,13 @@
  extern "C" {
 #endif
 
+#include <stdint.h>
+
 typedef struct _lpf_sa
 {
     int wsize;
     int head;
+    uint8_t isfull;
     float sum;
     float *buf;
 } LpfMaf;
