@@ -9,8 +9,9 @@
 
 #define HPF_PI 3.1415926
 
-int hpf_1st_init(Hpf1stObj *filter, float fc, float ts)
+int hpf_1st_init(Hpf1stObj *filter, float fc, float fs)
 {
+    float ts = 1 / fs;
     filter->alpha = 1 / (1 + 2 * HPF_PI * fc * ts);
     filter->ts = ts;
     filter->fc = fc;

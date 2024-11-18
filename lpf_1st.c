@@ -9,8 +9,9 @@
 
 #define LPF_PI  3.1415926
 
-int lpf_1st_init(Lpf1stObj *filter, float fc, float ts)
+int lpf_1st_init(Lpf1stObj *filter, float fc, float fs)
 {
+    float ts = 1 / fs;
     filter->alpha = (2 * LPF_PI * ts * fc) / (1 + 2 * LPF_PI * ts * fc);;
     filter->fc = fc;
     filter->ts = ts;
