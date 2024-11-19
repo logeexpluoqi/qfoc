@@ -17,8 +17,8 @@ typedef struct pid_structure
 {
     float kp, ki, kd;
     float err_k1, err_k2;
-    float u_k, u_k1;
-    float delta_u_k;
+    float yk, yk1;
+    float delta_yk;
     float olimit;
 } PidObj;
 
