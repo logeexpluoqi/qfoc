@@ -496,6 +496,10 @@ int qfoc_oloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
     if(foc->status != QFOC_STATUS_RUNNING) {
         return -1;
     }
+    if(foc->err != QFOC_ERR_NONE) {
+        foc->status = QFOC_STATUS_ERROR;
+        return -1;
+    }
 
     if(foc->deadzone != 0.0f) {
         iq = ((iq < 0.0f) && (iq > -foc->deadzone)) ? -foc->deadzone : ((iq > 0.0f) && (iq < foc->deadzone)) ? foc->deadzone : iq;
@@ -519,6 +523,10 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
     float ta, tb, tc;
 
     if(foc->status != QFOC_STATUS_RUNNING) {
+        return -1;
+    }
+    if(foc->err != QFOC_ERR_NONE) {
+        foc->status = QFOC_STATUS_ERROR;
         return -1;
     }
 
