@@ -53,6 +53,7 @@ typedef enum {
     QFOC_ERR_OITRACK,       // over current track limit
     QFOC_ERR_OVTRACK,       // over velocity track limit
     QFOC_ERR_OPTRACK,       // over position track limit
+    QFOC_ERR_PHASE,         // phase error
 } QFocError;
 
 typedef struct {
