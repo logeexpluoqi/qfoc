@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2024-11-12 17:19
+ * @ Modified time: 2024-11-20 18:21
  * @ Description:
  */
 
@@ -88,8 +88,8 @@ typedef struct {
     float deadzone;     // dead zone, unit A
     
     float vbus_max;     // V, power supply voltage max
-    float i2t_limit;    // A, current to power; unit i * i * t, A^2s
-    float i2t;          // W, average power in a period
+    float cilimit;      // A, continuous current to power limit
+    float ci;           // A, continuous current
     float ipower;       // average power in a period buffer, ipower += sqrt(iq * iq + id * id), in a iloop period
     uint32_t i2t_times;    // i2t(power) integral times
     uint32_t i2t_cnt;      // integral counter
@@ -104,7 +104,7 @@ typedef struct {
  * @brief: qfoc initialize
  * @param: motor, motor object, used to define a motor parameter
  * @param: pwm_max, pwm output max value
- * @param: i2t_limit, current to power limit, unit i * i * t, A^2s
+ * @param: cilimit, continuous current limit in i2t_times, unit A
  * @param: i2t_times, current to power calculate times in iloop 
  * @param: iloop_period, iloop period, unit ms
  * @param: deadzone, deadzone, dead zone, unit A
@@ -114,7 +114,7 @@ typedef struct {
  * @param: pmin, position min limit, unit degree
  * @return: QFocStatus
  */
-int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, float i2t_limit, uint32_t i2t_times, float deadzone, float imax, float vmax, float pmax, float pmin);
+int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, float cilimit, uint32_t i2t_times, float deadzone, float imax, float vmax, float pmax, float pmin);
 
 /**
  * FOC close loop algorithm.

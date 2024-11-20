@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2024-11-12 17:22
+ * @ Modified time: 2024-11-20 18:39
  * @ Description:
  */
 
@@ -139,10 +139,13 @@ static inline float _fsqrt(float x)
         float f;
         int i;
     } conv;
+	float x2;
+	x2 = x * 0.5f;
     conv.f = x;
     conv.i = 0x5f3504f3 - (conv.i >> 1);
     x = conv.f;
-    x = x * (1.5f - (0.5f * x * x * x));
+    x = x * (1.5f - (x2 * x * x)); // 1st iteration
+    x = x * (1.5f - (x2 * x * x)); // 2nd iteration
 
     return 1.0f / x;
 }
@@ -275,7 +278,7 @@ static int _qsvm_calc(float vbus, float q, float d, float edegree, float *ta, fl
 
 
 
-int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, float i2t_limit, uint32_t i2t_times, float deadzone, float imax, float vmax, float pmax, float pmin)
+int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, float cilimit, uint32_t i2t_times, float deadzone, float imax, float vmax, float pmax, float pmin)
 {
     int ret = 0;
     _memset(foc, 0, sizeof(QFoc));
@@ -310,7 +313,7 @@ int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, flo
         foc->err = QFOC_ERR_MOTOR_PARAM;
         ret = -1;
     }
-    foc->i2t_limit = i2t_limit;
+    foc->cilimit = cilimit;
     foc->i2t_times = i2t_times;
     foc->pwm_max = pwm_max;
     foc->vbus_max = vbus_max;
@@ -382,15 +385,16 @@ int qfoc_i_update(QFoc *foc, float ia, float ib, float ic)
     foc->ic = ic;
     _clarke_transform(ia, ib, ic, &alpha, &beta);
 
-    foc->ipower += (foc->iq * foc->iq + foc->id * foc->id);
     if(foc->i2t_cnt++ > foc->i2t_times) {
-        foc->i2t = foc->ipower / foc->i2t_times;
+        foc->ci = foc->ipower / foc->i2t_times;
         foc->i2t_cnt = 0;
         foc->ipower = 0.0f;
-        if(foc->i2t > foc->i2t_limit) {
+        if(foc->ci > foc->cilimit) {
             foc->status = QFOC_STATUS_ERROR;
             foc->err = QFOC_ERR_OPWR;
         }
+    } else {
+        foc->ipower += _fsqrt(foc->iq * foc->iq + foc->id * foc->id);
     }
 
     _park_transform(alpha, beta, foc->edegree, &foc->iq, &foc->id);
