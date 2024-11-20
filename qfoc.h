@@ -49,6 +49,10 @@ typedef enum {
     QFOC_ERR_OVBUS,         // over vbus limit
     QFOC_ERR_OPWR,          // over pwoer limit
     QFOC_ERR_MOTOR_PARAM,   // motor parameter error
+    /* trace error, using in controller loop, set by controller designer */
+    QFOC_ERR_OITRACK,       // over current track limit
+    QFOC_ERR_OVTRACK,       // over velocity track limit
+    QFOC_ERR_OPTRACK,       // over position track limit
 } QFocError;
 
 typedef struct {
