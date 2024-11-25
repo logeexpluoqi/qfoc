@@ -232,6 +232,7 @@ int pid_clr(PidObj *pid)
     pid->ek1 = 0;
     pid->edk1 = 0;
     pid->edk2 = 0;
+    pid->eyk1 = 0;
     pid->eyk2 = 0;
     return 0;
 }
@@ -242,6 +243,7 @@ int pid_calc_clr(PidObj *pid)
     pid->ek1 = 0;
     pid->edk1 = 0;
     pid->edk2 = 0;
+    pid->eyk1 = 0;
     pid->eyk2 = 0;
     return 0;
 }
