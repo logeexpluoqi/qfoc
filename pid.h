@@ -16,9 +16,24 @@ extern "C"
 typedef struct pid_structure
 {
     float kp, ki, kd;
-    float err_k1, err_k2;
+    float ek1;
+    float edk1;  // last d(ek)
     float yk, yk1;
-    float delta_yk;
+    float delta_k;
+
+    /* used in incomplete differential PID */
+    float edk2;
+    /* used in incomplete differential 
+        or integral separation threshold 
+        or low threshold in integral varible PID */
+    float alpha; // 0 < alpha < 1
+
+    float hth; // high threshold in integral varible PID
+
+    /* used in differencail first PID */
+    float eyk1; // last d(yk)
+    float eyk2;
+
     float olimit;
 } PidObj;
 
@@ -26,13 +41,32 @@ int pid_init(PidObj *pid, float kp, float ki, float kd, float olimit);
 
 int pid_param_set(PidObj *pid, float kp, float ki, float kd);
 
+/* output limit PID or basic PID */
 float pid_calc(PidObj *pid, float err);
 
-float pid_ki_isolate_calcu(PidObj *pid, float err, float seplimit);
+/* incomplete differential PID */
+int pid_incplt_diff_init(PidObj *pid, float kp, float ki, float kd, float alpha, float olimit);
 
-int pid_clear(PidObj *pid);
+float pid_incplt_diff_calc(PidObj *ctrl, float err);
 
-int pid_calc_clear(PidObj *pid);
+/* integral separation PID */
+int pid_int_sep_init(PidObj *pid, float kp, float ki, float kd, float alpha, float olimit);
+
+float pid_int_sep_calc(PidObj *pid, float err);
+
+/* integral varible PID */
+int pid_int_var_init(PidObj *pid, float kp, float ki, float kd, float lth, float hth, float olimit);
+
+float pid_int_var_calc(PidObj *pid, float err);
+
+/* differential first PID */
+int pid_diff_first_init(PidObj *pid, float kp, float ki, float kd, float alpha, float olimit);
+
+float pid_diff_first_calc(PidObj *pid, float err);
+
+int pid_clr(PidObj *pid);
+
+int pid_calc_clr(PidObj *pid);
 
 #ifdef __cplusplus
 }
