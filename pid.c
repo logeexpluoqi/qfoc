@@ -2,7 +2,7 @@
  * @Author: luoqi
  * @Date: 2021-04-27 19:20:38
  * @ Modified by: luoqi
- * @ Modified time: 2024-11-26 09:27
+ * @ Modified time: 2024-11-26 11:20
  */
 
 #include "pid.h"
@@ -56,6 +56,8 @@ float pid_calc(PidObj *pid, float err)
         } else {
             pid->yk1 = pid->yk;
         }
+    } else {
+        pid->yk1 = pid->yk;
     }
     return pid->yk;
 }
@@ -94,6 +96,8 @@ float pid_int_sep_calc(PidObj *pid, float err)
         } else {
             pid->yk1 = pid->yk;
         }
+    } else {
+        pid->yk1 = pid->yk;
     }
     return pid->yk;
 }
@@ -131,6 +135,8 @@ float pid_incplt_diff_calc(PidObj *pid, float err)
         } else {
             pid->yk1 = pid->yk;
         }
+    } else {
+        pid->yk1 = pid->yk;
     }
     return pid->yk;
 }
@@ -153,16 +159,15 @@ int pid_int_var_init(PidObj *pid, float kp, float ki, float kd, float lth, float
 float pid_int_var_calc(PidObj *pid, float err)
 {
     float ratio = 0;
+    float edk = err - pid->ek1;
 
     if(_abs(err) <= pid->lth) {
         ratio = 1;
     } else if(_abs(err) > pid->hth) {
         ratio = 0;
     } else { // lth < |e| < hth
-        ratio = (pid->hth - _abs(err)) / pid->hth;
+        ratio = (pid->hth - _abs(err)) / (pid->hth - pid->lth);
     }
-
-    float edk = err - pid->ek1;
 
     pid->delta_k = pid->kp * (err - pid->ek1)
         + ratio * pid->ki * err
@@ -182,6 +187,8 @@ float pid_int_var_calc(PidObj *pid, float err)
         } else {
             pid->yk1 = pid->yk;
         }
+    } else {
+        pid->yk1 = pid->yk;
     }
     return pid->yk;
 }
@@ -220,6 +227,8 @@ float pid_diff_first_calc(PidObj *pid, float err)
         } else {
             pid->yk1 = pid->yk;
         }
+    } else {
+        pid->yk1 = pid->yk;
     }
     return pid->yk;
 }
@@ -252,7 +261,7 @@ float pid_incplt_diff_int_var_calc(PidObj *pid, float err)
     } else if(_abs(err) > pid->hth) {
         ratio = 0;
     } else { // lth < |e| < hth
-        ratio = (pid->hth - _abs(err)) / pid->hth;
+        ratio = (pid->hth - _abs(err)) / (pid->hth - pid->lth);
     }
 
     pid->delta_k = pid->kp * (err - pid->ek1)
@@ -273,6 +282,8 @@ float pid_incplt_diff_int_var_calc(PidObj *pid, float err)
         } else {
             pid->yk1 = pid->yk;
         }
+    } else {
+        pid->yk1 = pid->yk;
     }
     return pid->yk;
 }
@@ -305,9 +316,9 @@ float pid_diff_first_int_var_calc(PidObj *pid, float err)
     } else if(_abs(err) > pid->hth) {
         ratio = 0;
     } else { // lth < |e| < hth
-        ratio = (pid->hth - _abs(err)) / pid->hth;
+        ratio = (pid->hth - _abs(err)) / (pid->hth - pid->lth);
     }
-    
+
     pid->delta_k = pid->kp * (err - pid->ek1)
         + ratio * pid->ki * err
         + pid->kd * (pid->alpha * (eyk - 2 * pid->eyk1 + pid->eyk2) + pid->eyk1 - pid->eyk2);
@@ -327,6 +338,8 @@ float pid_diff_first_int_var_calc(PidObj *pid, float err)
         } else {
             pid->yk1 = pid->yk;
         }
+    } else {
+        pid->yk1 = pid->yk;
     }
     return pid->yk;
 }
