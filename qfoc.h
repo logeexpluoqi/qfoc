@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2024-11-20 18:21
+ * @ Modified time: 2024-11-26 14:10
  * @ Description:
  */
 
@@ -89,9 +89,6 @@ typedef struct {
     float pmax;         // degree
     float pmin;         // degree
 
-    /* if deadzone is 0.0f, mean no deadzone */
-    float deadzone;     // dead zone, unit A
-    
     float vbus_max;     // V, power supply voltage max
     float cilimit;      // A, continuous current to power limit
     float ci;           // A, continuous current
@@ -119,7 +116,7 @@ typedef struct {
  * @param: pmin, position min limit, unit degree
  * @return: QFocStatus
  */
-int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, float cilimit, uint32_t i2t_times, float deadzone, float imax, float vmax, float pmax, float pmin);
+int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, float cilimit, uint32_t i2t_times, float imax, float vmax, float pmax, float pmin);
 
 /**
  * FOC close loop algorithm.

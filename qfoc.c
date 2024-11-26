@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2024-11-20 18:39
+ * @ Modified time: 2024-11-26 14:10
  * @ Description:
  */
 
@@ -278,7 +278,7 @@ static int _qsvm_calc(float vbus, float q, float d, float edegree, float *ta, fl
 
 
 
-int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, float cilimit, uint32_t i2t_times, float deadzone, float imax, float vmax, float pmax, float pmin)
+int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, float cilimit, uint32_t i2t_times, float imax, float vmax, float pmax, float pmin)
 {
     int ret = 0;
     _memset(foc, 0, sizeof(QFoc));
@@ -320,7 +320,6 @@ int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, flo
     foc->vmax = _rpm2deg(vmax);
     foc->pmax = pmax;
     foc->pmin = pmin;
-    foc->deadzone = deadzone;
     if(imax <= 0.0f) {
         foc->imax = 0.0f;
         foc->status = QFOC_STATUS_ERROR;
@@ -501,10 +500,6 @@ int qfoc_oloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
         return -1;
     }
 
-    if(foc->deadzone != 0.0f) {
-        iq = ((iq < 0.0f) && (iq > -foc->deadzone)) ? -foc->deadzone : ((iq > 0.0f) && (iq < foc->deadzone)) ? foc->deadzone : iq;
-    }
-
     foc->sector = _qsvm_calc(foc->vbus, iq, id, foc->edegree, &ta, &tb, &tc);
     foc->pwma = (uint16_t)(ta * foc->pwm_max);
     foc->pwmb = (uint16_t)(tb * foc->pwm_max);
@@ -529,11 +524,7 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
         foc->status = QFOC_STATUS_ERROR;
         return -1;
     }
-
     foc->iloop_controller(foc, &iq, &id);
-    if(foc->deadzone != 0.0f) {
-        iq = ((iq < 0.0f) && (iq > -foc->deadzone)) ? -foc->deadzone : ((iq > 0.0f) && (iq < foc->deadzone)) ? foc->deadzone : iq;
-    }
 
     foc->sector = _qsvm_calc(foc->vbus, iq, id, foc->edegree, &ta, &tb, &tc);
     foc->pwma = (uint16_t)(ta * foc->pwm_max);
