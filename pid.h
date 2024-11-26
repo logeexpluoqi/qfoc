@@ -24,10 +24,11 @@ typedef struct pid_structure
     /* used in incomplete differential PID */
     float edk2;
     /* used in incomplete differential 
-        or integral separation threshold 
-        or low threshold in integral varible PID */
+        or integral separation threshold  */
     float alpha; // 0 < alpha < 1
 
+    /* used in integral varible PID */
+    float lth; // low threshold in integral varible PID
     float hth; // high threshold in integral varible PID
 
     /* used in differencail first PID */
@@ -63,6 +64,16 @@ float pid_int_var_calc(PidObj *pid, float err);
 int pid_diff_first_init(PidObj *pid, float kp, float ki, float kd, float alpha, float olimit);
 
 float pid_diff_first_calc(PidObj *pid, float err);
+
+/* incomplete differential and integral varible PID */
+int pid_incplt_diff_int_var_init(PidObj *pid, float kp, float ki, float kd, float alpha, float lth, float hth, float olimit);
+
+float pid_incplt_diff_int_var_calc(PidObj *ctrl, float err);
+
+/* differential first and integral varible PID */
+int pid_diff_first_int_var_init(PidObj *pid, float kp, float ki, float kd, float alpha, float lth, float hth, float olimit);
+
+float pid_diff_first_int_var_calc(PidObj *pid, float err);
 
 int pid_clr(PidObj *pid);
 
