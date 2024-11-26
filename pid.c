@@ -154,11 +154,11 @@ float pid_int_var_calc(PidObj *pid, float err)
 {
     float ratio = 0;
 
-    if(err <= pid->lth) {
+    if(_abs(err) <= pid->lth) {
         ratio = 1;
-    } else if(err > pid->hth) {
+    } else if(_abs(err) > pid->hth) {
         ratio = 0;
-    } else { // lth < e < hth
+    } else { // lth < |e| < hth
         ratio = (pid->hth - _abs(err)) / pid->lth;
     }
 
@@ -247,11 +247,11 @@ float pid_incplt_diff_int_var_calc(PidObj *pid, float err)
     float edk = err - pid->ek1;
     float ratio = 0;
 
-    if(err <= pid->lth) {
+    if(_abs(err) <= pid->lth) {
         ratio = 1;
-    } else if(err > pid->hth) {
+    } else if(_abs(err) > pid->hth) {
         ratio = 0;
-    } else { // lth < e < hth
+    } else { // lth < |e| < hth
         ratio = (pid->hth - _abs(err)) / pid->lth;
     }
 
@@ -300,11 +300,11 @@ float pid_diff_first_int_var_calc(PidObj *pid, float err)
     float eyk = pid->delta_k;
     float ratio = 0;
 
-    if(err <= pid->lth) {
+    if(_abs(err) <= pid->lth) {
         ratio = 1;
-    } else if(err > pid->hth) {
+    } else if(_abs(err) > pid->hth) {
         ratio = 0;
-    } else { // lth < e < hth
+    } else { // lth < |e| < hth
         ratio = (pid->hth - _abs(err)) / pid->lth;
     }
     
