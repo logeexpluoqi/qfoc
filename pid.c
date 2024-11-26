@@ -159,7 +159,7 @@ float pid_int_var_calc(PidObj *pid, float err)
     } else if(_abs(err) > pid->hth) {
         ratio = 0;
     } else { // lth < |e| < hth
-        ratio = (pid->hth - _abs(err)) / pid->lth;
+        ratio = (pid->hth - _abs(err)) / pid->hth;
     }
 
     float edk = err - pid->ek1;
@@ -252,7 +252,7 @@ float pid_incplt_diff_int_var_calc(PidObj *pid, float err)
     } else if(_abs(err) > pid->hth) {
         ratio = 0;
     } else { // lth < |e| < hth
-        ratio = (pid->hth - _abs(err)) / pid->lth;
+        ratio = (pid->hth - _abs(err)) / pid->hth;
     }
 
     pid->delta_k = pid->kp * (err - pid->ek1)
@@ -305,7 +305,7 @@ float pid_diff_first_int_var_calc(PidObj *pid, float err)
     } else if(_abs(err) > pid->hth) {
         ratio = 0;
     } else { // lth < |e| < hth
-        ratio = (pid->hth - _abs(err)) / pid->lth;
+        ratio = (pid->hth - _abs(err)) / pid->hth;
     }
     
     pid->delta_k = pid->kp * (err - pid->ek1)
