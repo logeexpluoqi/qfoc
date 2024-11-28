@@ -322,13 +322,14 @@ int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, flo
     foc->pmin = pmin;
     if(imax <= 0.0f) {
         foc->imax = 0.0f;
+        foc->iphase_max = 0.0f;
         foc->status = QFOC_STATUS_ERROR;
         foc->err = QFOC_ERR_IMAX_NOT_SET;
         ret = -1;
     } else {
         foc->imax = imax;
+        foc->iphase_max = imax;
     }
-    foc->iphase_max = imax;
     return ret;
 }
 
