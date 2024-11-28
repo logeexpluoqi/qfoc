@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2024-11-26 14:10
+ * @ Modified time: 2024-11-28 08:45
  * @ Description:
  */
 
@@ -82,8 +82,9 @@ typedef struct {
     uint8_t sector;     // svm generate space vector sector, 1-6
 
     /* imax must over 0.0f,  vmax value is 0.0f, means no limit */
-    float imax;         // A
-    float vmax;         // degree/s
+    float imax;         // A, q axis current limit
+    float iphase_max;   // A, phase current limit
+    float vmax;         // degree/s, velocity limit
 
     /* if pmax and pmin is 0.0f, means position no limit */
     float pmax;         // degree

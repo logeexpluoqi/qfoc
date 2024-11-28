@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2024-11-26 14:10
+ * @ Modified time: 2024-11-28 09:35
  * @ Description:
  */
 
@@ -317,7 +317,7 @@ int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, flo
     foc->i2t_times = i2t_times;
     foc->pwm_max = pwm_max;
     foc->vbus_max = vbus_max;
-    foc->vmax = _rpm2deg(vmax);
+    foc->vmax = vmax;
     foc->pmax = pmax;
     foc->pmin = pmin;
     if(imax <= 0.0f) {
@@ -325,8 +325,10 @@ int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, flo
         foc->status = QFOC_STATUS_ERROR;
         foc->err = QFOC_ERR_IMAX_NOT_SET;
         ret = -1;
+    } else {
+        foc->imax = imax;
     }
-    foc->imax = imax;
+    foc->iphase_max = imax;
     return ret;
 }
 
@@ -382,6 +384,13 @@ int qfoc_i_update(QFoc *foc, float ia, float ib, float ic)
     foc->ia = ia;
     foc->ib = ib;
     foc->ic = ic;
+    
+    if((_QFOC_ABS(ia) > foc->iphase_max) || (_QFOC_ABS(ib) > foc->iphase_max) || (_QFOC_ABS(ic) > foc->iphase_max)) {
+        foc->status = QFOC_STATUS_ERROR;
+        foc->err = QFOC_ERR_OIMAX;
+        return -1;
+    }
+
     _clarke_transform(ia, ib, ic, &alpha, &beta);
 
     if(foc->i2t_cnt++ > foc->i2t_times) {
@@ -522,6 +531,9 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
     }
     if(foc->err != QFOC_ERR_NONE) {
         foc->status = QFOC_STATUS_ERROR;
+        *pwma = 0;
+        *pwmb = 0;
+        *pwmc = 0;
         return -1;
     }
     foc->iloop_controller(foc, &iq, &id);
