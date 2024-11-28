@@ -502,10 +502,16 @@ int qfoc_oloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
     float id = foc->idref;
 
     if(foc->status != QFOC_STATUS_RUNNING) {
+        *pwma = 0;
+        *pwmb = 0;
+        *pwmc = 0;
         return -1;
     }
     if(foc->err != QFOC_ERR_NONE) {
         foc->status = QFOC_STATUS_ERROR;
+        *pwma = 0;
+        *pwmb = 0;
+        *pwmc = 0;
         return -1;
     }
 
@@ -527,6 +533,9 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
     float ta, tb, tc;
 
     if(foc->status != QFOC_STATUS_RUNNING) {
+        *pwma = 0;
+        *pwmb = 0;
+        *pwmc = 0;
         return -1;
     }
     if(foc->err != QFOC_ERR_NONE) {
