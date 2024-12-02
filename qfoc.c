@@ -2,11 +2,14 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2024-11-28 09:35
+ * @ Modified time: 2024-12-02 14:40
  * @ Description:
  */
 
 #include "qfoc.h"
+
+#define _QFOC_NULL ((void *)0)
+#define _QFOC_ISVALID(obj)   ((obj) != _QFOC_NULL)
 
 static void *_memset(void *dest, int c, uint32_t n)
 {
@@ -281,6 +284,9 @@ static int _qsvm_calc(float vbus, float q, float d, float edegree, float *ta, fl
 int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, float cilimit, uint32_t i2t_times, float imax, float vmax, float pmax, float pmin)
 {
     int ret = 0;
+    if(!_QFOC_ISVALID(foc) || !_QFOC_ISVALID(motor)) {
+        return -1;
+    }
     _memset(foc, 0, sizeof(QFoc));
     foc->motor = motor;
     if(foc->motor->gear_ratio <= 0.0f) {
@@ -335,24 +341,37 @@ int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, flo
 
 int qfoc_iloop_controller_set(QFoc *foc, int (*controller)(void *states, float *iq, float *id))
 {
+    if(!_QFOC_ISVALID(foc)) {
+        return -1;
+    }
+    
     foc->iloop_controller = controller;
     return 0;
 }   
 
 int qfoc_ploop_controller_set(QFoc *foc, float (*controller)(void *states))
 {
+    if(!_QFOC_ISVALID(foc)) {
+        return -1;
+    }
     foc->ploop_controller = controller;
     return 0;
 }
 
 int qfoc_vloop_controller_set(QFoc *foc, float (*controller)(void *states))
 {
+    if(!_QFOC_ISVALID(foc)) {
+        return -1;
+    }
     foc->vloop_controller = controller;
     return 0;
 }
 
 int qfoc_enable(QFoc *foc, QFocEnable ena)
 {
+    if(!_QFOC_ISVALID(foc)) {
+        return -1;
+    }
     if(ena == QFOC_ENABLE) {
         foc->iqref = 0.0f;
         foc->idref = 0.0f;
@@ -369,6 +388,9 @@ int qfoc_enable(QFoc *foc, QFocEnable ena)
 
 int qfoc_vbus_update(QFoc *foc, float vbus)
 {
+    if(!_QFOC_ISVALID(foc)) {
+        return -1;
+    }
     if(vbus > foc->vbus_max) {
         foc->vbus = foc->vbus_max;
         foc->status = QFOC_STATUS_ERROR;
@@ -381,6 +403,9 @@ int qfoc_vbus_update(QFoc *foc, float vbus)
 
 int qfoc_i_update(QFoc *foc, float ia, float ib, float ic)
 {
+    if(!_QFOC_ISVALID(foc)) {
+        return -1;
+    }
     float alpha, beta;
     foc->ia = ia;
     foc->ib = ib;
@@ -419,6 +444,9 @@ int qfoc_i_update(QFoc *foc, float ia, float ib, float ic)
 
 int qfoc_v_update(QFoc *foc, float v)
 {
+    if(!_QFOC_ISVALID(foc)) {
+        return -1;
+    }
     if(foc->vmax != 0.0f) {
         if((v > foc->vmax) || (v < -foc->vmax)) {
             foc->v = (v > foc->vmax) ? foc->vmax : ((v < -foc->vmax) ? -foc->vmax : v);
@@ -433,6 +461,9 @@ int qfoc_v_update(QFoc *foc, float v)
 
 int qfoc_ep_update(QFoc *foc, float ep)
 {
+    if(!_QFOC_ISVALID(foc)) {
+        return -1;
+    }
     foc->ep = ep;
     foc->p = ep / foc->motor->gear_ratio;
     if((foc->pmax != 0.0f) || (foc->pmin != 0.0f)) {
@@ -457,6 +488,9 @@ int qfoc_ep_update(QFoc *foc, float ep)
 /* FOC controller reference input set */
 int qfoc_iref_set(QFoc *foc, float iqref, float idref)
 {
+    if(!_QFOC_ISVALID(foc)) {
+        return -1;
+    }
     foc->iqref = (iqref > foc->imax) ? foc->imax : ((iqref < -foc->imax) ? -foc->imax : iqref);
     foc->idref = (idref > foc->imax) ? foc->imax : ((idref < -foc->imax) ? -foc->imax : idref);
     return 0;
@@ -464,6 +498,9 @@ int qfoc_iref_set(QFoc *foc, float iqref, float idref)
 
 int qfoc_vref_set(QFoc *foc, float vref)
 {
+    if(!_QFOC_ISVALID(foc)) {
+        return -1;
+    }
     if(foc->vmax != 0.0f) {
         foc->vref = (vref > foc->vmax) ? foc->vmax : ((vref < -foc->vmax) ? -foc->vmax : vref);
     } else {
@@ -474,6 +511,9 @@ int qfoc_vref_set(QFoc *foc, float vref)
 
 int qfoc_pref_set(QFoc *foc, float pref)
 {
+    if(!_QFOC_ISVALID(foc)) {
+        return -1;
+    }
     if((foc->pmax == 0.0f) && (foc->pmin == 0.0f)) {
         foc->pref = pref;
     } else {
@@ -498,6 +538,9 @@ int qfoc_force_calc(float vbus, float q, float d, float edegree, uint16_t pwm_ma
 
 int qfoc_oloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
 {
+    if(!_QFOC_ISVALID(foc)) {
+        return -1;
+    }
     float ta, tb, tc;
     float iq = foc->iqref;
     float id = foc->idref;
@@ -530,6 +573,9 @@ int qfoc_oloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
 /* FOC current loop control */
 int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
 {
+    if(!_QFOC_ISVALID(foc)) {
+        return -1;
+    }
     float iq, id;
     float ta, tb, tc;
 
@@ -562,6 +608,9 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
 /* FOC velocity/position current double loop pid control */
 int qfoc_vloop_update(QFoc *foc, float dimax)
 {
+    if(!_QFOC_ISVALID(foc)) {
+        return -1;
+    }
     float iref = foc->vloop_controller(foc);
     float di = iref - foc->iq;
     if(dimax != 0) {
@@ -581,6 +630,9 @@ int qfoc_vloop_update(QFoc *foc, float dimax)
 
 int qfoc_ploop_update(QFoc *foc, float dimax)
 {
+    if(!_QFOC_ISVALID(foc)) {
+        return -1;
+    }
     float iref = foc->ploop_controller(foc);
     float di = iref - foc->iq;
     if(dimax != 0) {
@@ -600,6 +652,9 @@ int qfoc_ploop_update(QFoc *foc, float dimax)
 
 int qfoc_vploop_update(QFoc *foc, float dvmax)
 {
+    if(!_QFOC_ISVALID(foc)) {
+        return -1;
+    }
     float vref = foc->ploop_controller(foc);
     float dv = vref - foc->v;
     if(dvmax != 0) {
@@ -618,6 +673,9 @@ int qfoc_vploop_update(QFoc *foc, float dvmax)
 
 int qfoc_calib_calc(QFoc *foc, float idmax, float pref, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
 {
+    if(!_QFOC_ISVALID(foc)) {
+        return -1;
+    }
     int ret;
     float ta, tb, tc;
     foc->sector = 0;
