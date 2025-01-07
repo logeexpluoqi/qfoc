@@ -268,14 +268,14 @@ static inline int _ipark_transform(qfp_t q, qfp_t d, qfp_t edegree, qfp_t *alpha
     return 0;
 }
 
-static int _qsvm_calc(qfp_t vbus, qfp_t q, qfp_t d, qfp_t edegree, qfp_t *ta, qfp_t *tb, qfp_t *tc)
+static int _qsvm_calc(qfp_t vbus, qfp_t vq, qfp_t vd, qfp_t edegree, qfp_t *ta, qfp_t *tb, qfp_t *tc)
 {
     qfp_t alpha, beta;
-    q = (q > vbus) ? vbus : ((q < -vbus) ? -vbus : q);
-    d = (d > vbus) ? vbus : ((d < -vbus) ? -vbus : d);
-    qfp_t _q = (q / vbus) * _QFOC_SQRT3_BY_2;
-    qfp_t _d = (d / vbus) * _QFOC_SQRT3_BY_2;
-    _ipark_transform(_q, _d, edegree, &alpha, &beta);
+    vq = (vq > vbus) ? vbus : ((vq < -vbus) ? -vbus : vq);
+    vd = (vd > vbus) ? vbus : ((vd < -vbus) ? -vbus : vd);
+    qfp_t _vq = (vq / vbus) * _QFOC_SQRT3_BY_2;
+    qfp_t _vd = (vd / vbus) * _QFOC_SQRT3_BY_2;
+    _ipark_transform(_vq, _vd, edegree, &alpha, &beta);
     return _svm(alpha, beta, ta, tb, tc);
 }
 
