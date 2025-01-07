@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2024-12-16 19:17
+ * @ Modified time: 2025-01-07 14:51
  * @ Description:
  */
 
@@ -11,21 +11,30 @@
 
 #include <stdint.h>
 
+/** 
+   define qfoc float data type, 
+   user can redefine thier own float type 
+   to guaranty precision 
+ */
+#ifndef qfp_t
+typedef float qfp_t;
+#endif
+
 typedef struct {
     uint8_t poles_pairs;
-    float phase_resistance; // Ohm
-    float phase_inductance; // mH
+    qfp_t phase_resistance; // Ohm
+    qfp_t phase_inductance; // mH
 
-    float rated_current;    // A
-    float stall_current;    // A
-    float rated_torque;     // Nm
-    float stall_torque;     // Nm
-    float rated_voltage;    // V
-    float rated_speed;      // rpm
+    qfp_t rated_current;    // A
+    qfp_t stall_current;    // A
+    qfp_t rated_torque;     // Nm
+    qfp_t stall_torque;     // Nm
+    qfp_t rated_voltage;    // V
+    qfp_t rated_speed;      // rpm
 
-    float kt;               // Nm/A
+    qfp_t kt;               // Nm/A
 
-    float gear_ratio;
+    qfp_t gear_ratio;
 } PmsmMotor;
 
 typedef enum {
@@ -56,26 +65,26 @@ typedef enum {
     QFOC_ERR_PHASE,         // phase error
 } QFocError;
 
-typedef struct {
+typedef struct _qfoc{
     QFocStatus status;
     QFocError err;
-    float epos;         // degree, encoder position
-    float pos;          // degree, position
-    float vel;          // degree/s, velocity
-    float iq;           // A, q-axis current
-    float id;           // A, d-axis current
-    float ia;           // A, phase a current
-    float ib;           // A, phase b current
-    float ic;           // A, phase c current
-    float edegree;      // degree, electric degree, 0-360 degree
-    float vbus;         // V, power supply voltage
+    qfp_t epos;         // degree, encoder position
+    qfp_t pos;          // degree, position, pos = epos * gear_ratio
+    qfp_t vel;          // degree/s, velocity
+    qfp_t iq;           // A, q-axis current
+    qfp_t id;           // A, d-axis current
+    qfp_t ia;           // A, phase a current
+    qfp_t ib;           // A, phase b current
+    qfp_t ic;           // A, phase c current
+    qfp_t edegree;      // degree, electric degree, 0-360 degree
+    qfp_t vbus;         // V, power supply voltage
 
-    float pref;         // degree, position reference
-    float vref;         // degree/s, velocity reference
-    float iqref;        // A, iq reference
-    float idref;        // A, id reference
-    float vq;           // V, q axis voltage
-    float vd;           // V, d axis voltage
+    qfp_t pref;         // degree, position reference
+    qfp_t vref;         // degree/s, velocity reference
+    qfp_t iqref;        // A, iq reference
+    qfp_t idref;        // A, id reference
+    qfp_t vq;           // V, q axis voltage
+    qfp_t vd;           // V, d axis voltage
 
     uint16_t pwm_max;   // pwm output max value
     uint16_t pwma;      // pwm output, phase a
@@ -84,25 +93,25 @@ typedef struct {
     uint8_t sector;     // svm generate space vector sector, 1-6
 
     /* imax must over 0.0f,  vmax value is 0.0f, means no limit */
-    float imax;         // A, q axis current limit
-    float iphase_max;   // A, phase current limit
-    float vel_max;         // degree/s, velocity limit
+    qfp_t imax;         // A, q axis current limit
+    qfp_t iphase_max;   // A, phase current limit
+    qfp_t vel_max;         // degree/s, velocity limit
 
     /* if pmax and pmin is 0.0f, means position no limit */
-    float pos_max;         // degree
-    float pos_min;         // degree
+    qfp_t pos_max;         // degree
+    qfp_t pos_min;         // degree
 
-    float vbus_max;     // V, power supply voltage max
-    float cilimit;      // A, continuous current to power limit
-    float ci;           // A, continuous current
-    float ipower;       // average power in a period buffer, ipower += sqrt(iq * iq + id * id), in a iloop period
+    qfp_t vbus_max;     // V, power supply voltage max
+    qfp_t cilimit;      // A, continuous current to power limit
+    qfp_t ci;           // A, continuous current
+    qfp_t ipower;       // average power in a period buffer, ipower += sqrt(iq * iq + id * id), in a iloop period
     uint32_t i2t_times;    // i2t(power) integral times
     uint32_t i2t_cnt;      // integral counter
     PmsmMotor *motor;
     
-    int (*iloop_controller)(void *states, float *vq, float *vd); // iq and id loop algorithm, return target vq and vd
-    float (*ploop_controller)(void *states); // position loop algorithm
-    float (*vloop_controller)(void *states); // velocity loop algorithm
+    int (*iloop_controller)(struct _qfoc *foc, qfp_t *vq, qfp_t *vd); // iq and id loop algorithm, return target vq and vd
+    qfp_t (*ploop_controller)(struct _qfoc *foc); // position loop algorithm
+    qfp_t (*vloop_controller)(struct _qfoc *foc); // velocity loop algorithm
 } QFoc;
 
 /**
@@ -111,15 +120,13 @@ typedef struct {
  * @param: pwm_max, pwm output max value
  * @param: cilimit, continuous current limit in i2t_times, unit A
  * @param: i2t_times, current to power calculate times in iloop 
- * @param: iloop_period, iloop period, unit ms
- * @param: deadzone, deadzone, dead zone, unit A
  * @param: imax, current limit, unit A
  * @param: vmax, velocity limit, unit degree/s
  * @param: pmax, position max limit, unit degree
  * @param: pmin, position min limit, unit degree
  * @return: QFocStatus
  */
-int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, float cilimit, uint32_t i2t_times, float imax, float vel_max, float pos_max, float pos_min);
+int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, qfp_t vbus_max, qfp_t cilimit, uint32_t i2t_times, qfp_t imax, qfp_t vel_max, qfp_t pos_max, qfp_t pos_min);
 
 /**
  * FOC close loop algorithm.
@@ -127,44 +134,43 @@ int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, float vbus_max, flo
  * need to complete by users, and regist these algorithm to this qfoc frame.
  * qfoc frame will auto-callback these algorithm in loop calculate or update
  * functions. and qfoc frame will auto put foc structure into these algorithm,
- * @param: states, foc structure by defaulte or user-defined parameters, if 
- *          using user-defined states, algo_function input states will be ignored.
+ * @param: foc, foc structure, controller algorithm will use this structure to get foc parameters and set foc outputs.
  * @return: iloop_controller will output target iq value and target id value, its be
  *          used in qfoc_iloop_calc funciton.
  *          ploop_controller and vloop_controller will return position loop and velocity loop outputs,
  *          and called by qfoc_ploop_update, qfoc_vloop_update and qfoc_vploop_update
  *          function. 
  */
-int qfoc_iloop_controller_set(QFoc *foc, int (*controller)(void *states, float *vq, float *vd));
+int qfoc_iloop_controller_set(QFoc *foc, int (*controller)(QFoc *foc, qfp_t *vq, qfp_t *vd));
 
-int qfoc_ploop_controller_set(QFoc *foc, float (*controller)(void *states));
+int qfoc_ploop_controller_set(QFoc *foc, qfp_t (*controller)(QFoc *foc));
 
-int qfoc_vloop_controller_set(QFoc *foc, float (*controller)(void *states));
+int qfoc_vloop_controller_set(QFoc *foc, qfp_t (*controller)(QFoc *foc));
 
 int qfoc_enable(QFoc *foc, QFocEnable ena);
 
 /* FOC update state from vbus/current/velocity/postion sensors */
 /* These update api can return foc statu, include errors */
-int qfoc_vbus_update(QFoc *foc, float vbus);
+int qfoc_vbus_update(QFoc *foc, qfp_t vbus);
 
-int qfoc_i_update(QFoc *foc, float ia, float ib, float ic);
+int qfoc_i_update(QFoc *foc, qfp_t ia, qfp_t ib, qfp_t ic);
 
-int qfoc_vel_update(QFoc *foc, float vel);
+int qfoc_vel_update(QFoc *foc, qfp_t vel);
 
 /* ep is encoder positon update */
-int qfoc_epos_update(QFoc *foc, float epos);
+int qfoc_epos_update(QFoc *foc, qfp_t epos);
 
 /* FOC controller reference input set */
-int qfoc_vqd_set(QFoc *foc, float vq, float vd);
+int qfoc_vqd_set(QFoc *foc, qfp_t vq, qfp_t vd);
 
-int qfoc_iref_set(QFoc *foc, float iqref, float idref);
+int qfoc_iref_set(QFoc *foc, qfp_t iqref, qfp_t idref);
 
-int qfoc_vref_set(QFoc *foc, float vref);
+int qfoc_vref_set(QFoc *foc, qfp_t vref);
 
-int qfoc_pref_set(QFoc *foc, float pref);
+int qfoc_pref_set(QFoc *foc, qfp_t pref);
 
 /* FOC force output by given edegree, iq and id, return the svm sector */
-int qfoc_force_calc(float vbus, float vq, float vd, float edegree, uint16_t pwm_max, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
+int qfoc_force_calc(qfp_t vbus, qfp_t vq, qfp_t vd, qfp_t edegree, uint16_t pwm_max, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
 
 /* FOC current open-loop control */
 int qfoc_oloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
@@ -173,19 +179,19 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
 
 /* FOC velocity/position current double loop pid control */
 /* dmax is vloop or ploop  output limit*/
-int qfoc_vloop_update(QFoc *foc, float dmax);
+int qfoc_vloop_update(QFoc *foc, qfp_t dmax);
 
-int qfoc_ovloop_update(QFoc *foc, float dmax);
+int qfoc_ovloop_update(QFoc *foc, qfp_t dmax);
 
-int qfoc_ploop_update(QFoc *foc, float dmax);
+int qfoc_ploop_update(QFoc *foc, qfp_t dmax);
 
 /* FOC position velocity pid control */
 /* dmax is vploop  output limit*/
-int qfoc_vploop_update(QFoc *foc, float dmax);
+int qfoc_vploop_update(QFoc *foc, qfp_t dmax);
 
 /* FOC phase calibration, make d axis aligned to A axis */
 /* First call this api, and delay some time to record encoder positon, this position is the phase bias */
 /* Its also can be used in encoder caliberation */
-int qfoc_calib_calc(QFoc *foc, float vdmax, float pref, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
+int qfoc_calib_calc(QFoc *foc, qfp_t vdmax, qfp_t pref, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
 
 #endif
