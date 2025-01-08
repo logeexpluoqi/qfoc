@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2025-01-07 14:49
+ * @ Modified time: 2025-01-08 17:29
  * @ Description:
  */
 
@@ -433,8 +433,6 @@ int qfoc_i_update(QFoc *foc, qfp_t ia, qfp_t ib, qfp_t ic)
 
     _park_transform(alpha, beta, foc->edegree, &foc->iq, &foc->id);
     if((foc->iq > foc->imax) || (foc->iq < -foc->imax) || (foc->id > foc->imax) || (foc->id < -foc->imax)) {
-        foc->iq = (foc->iq > foc->imax) ? foc->imax : ((foc->iq < -foc->imax) ? -foc->imax : foc->iq);
-        foc->id = (foc->id > foc->imax) ? foc->imax : ((foc->id < -foc->imax) ? -foc->imax : foc->id);
         foc->status = QFOC_STATUS_ERROR;
         foc->err = QFOC_ERR_OIMAX;
         return -1;
@@ -447,15 +445,14 @@ int qfoc_vel_update(QFoc *foc, qfp_t vel)
     if(!_QFOC_ISVALID(foc)) {
         return -1;
     }
+    foc->vel = vel;
     if(foc->vel_max!= 0) {
         if((vel > foc->vel_max) || (vel < -foc->vel_max)) {
-            foc->vel = (vel > foc->vel_max) ? foc->vel_max: ((vel < -foc->vel_max) ? -foc->vel_max: vel);
             foc->status = QFOC_STATUS_ERROR;
             foc->err = QFOC_ERR_OVMAX;
             return -1;
         }
     } 
-    foc->vel = vel;
     return 0;
 }
 
@@ -473,7 +470,6 @@ int qfoc_epos_update(QFoc *foc, qfp_t epos)
             } else {
                 foc->err = QFOC_ERR_OPMIN;
             }
-            foc->pos = (foc->pos > foc->pos_max) ? foc->pos_max : ((foc->pos < foc->pos_min) ? foc->pos_min : foc->pos);
             foc->status = QFOC_STATUS_ERROR;
             return -1;
         }
