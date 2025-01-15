@@ -2,7 +2,7 @@
  * @Author: luoqi
  * @Date: 2021-04-27 19:20:38
  * @ Modified by: luoqi
- * @ Modified time: 2024-11-26 11:20
+ * @ Modified time: 2025-01-15 17:37
  */
 
 #include "pid.h"
@@ -46,7 +46,7 @@ float pid_calc(PidObj *pid, float err)
     pid->ek1 = err;
     pid->yk = pid->yk1 + pid->delta_k;
 
-    if(pid->olimit != 0) {
+    if(pid->olimit != PID_NO_LIMIT) {
         if(pid->yk > pid->olimit) {
             pid->yk = pid->olimit;
             pid->yk1 = pid->yk;
@@ -86,7 +86,7 @@ float pid_int_sep_calc(PidObj *pid, float err)
     pid->ek1 = err;
     pid->yk = pid->yk1 + pid->delta_k;
 
-    if(pid->olimit != 0) {
+    if(pid->olimit != PID_NO_LIMIT) {
         if(pid->yk > pid->olimit) {
             pid->yk = pid->olimit;
             pid->yk1 = pid->yk;
@@ -177,7 +177,7 @@ float pid_int_var_calc(PidObj *pid, float err)
     pid->ek1 = err;
     pid->yk = pid->yk1 + pid->delta_k;
 
-    if(pid->olimit != 0) {
+    if(pid->olimit != PID_NO_LIMIT) {
         if(pid->yk > pid->olimit) {
             pid->yk = pid->olimit;
             pid->yk1 = pid->yk;
@@ -217,7 +217,7 @@ float pid_diff_first_calc(PidObj *pid, float err)
     pid->ek1 = err;
     pid->yk = pid->yk1 + pid->delta_k;
 
-    if(pid->olimit != 0) {
+    if(pid->olimit != PID_NO_LIMIT) {
         if(pid->yk > pid->olimit) {
             pid->yk = pid->olimit;
             pid->yk1 = pid->yk;
@@ -272,7 +272,7 @@ float pid_incplt_diff_int_var_calc(PidObj *pid, float err)
     pid->ek1 = err;
     pid->yk = pid->yk1 + pid->delta_k;
 
-    if(pid->olimit != 0) {
+    if(pid->olimit != PID_NO_LIMIT) {
         if(pid->yk > pid->olimit) {
             pid->yk = pid->olimit;
             pid->yk1 = pid->yk;
@@ -328,7 +328,7 @@ float pid_diff_first_int_var_calc(PidObj *pid, float err)
     pid->ek1 = err;
     pid->yk = pid->yk1 + pid->delta_k;
 
-    if(pid->olimit != 0) {
+    if(pid->olimit != PID_NO_LIMIT) {
         if(pid->yk > pid->olimit) {
             pid->yk = pid->olimit;
             pid->yk1 = pid->yk;

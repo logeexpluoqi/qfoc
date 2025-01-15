@@ -38,6 +38,8 @@ typedef struct pid_structure
     float olimit;
 } PidObj;
 
+#define PID_NO_LIMIT    0
+
 int pid_init(PidObj *pid, float kp, float ki, float kd, float olimit);
 
 int pid_param_set(PidObj *pid, float kp, float ki, float kd);

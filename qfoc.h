@@ -114,6 +114,8 @@ typedef struct _qfoc{
     qfp_t (*vloop_controller)(struct _qfoc *foc); // velocity loop algorithm
 } QFoc;
 
+#define QFOC_NO_LIMIT   0
+
 /**
  * @brief: qfoc initialize
  * @param: motor, motor object, used to define a motor parameter

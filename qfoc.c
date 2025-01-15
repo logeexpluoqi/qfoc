@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2025-01-08 17:29
+ * @ Modified time: 2025-01-15 17:39
  * @ Description:
  */
 
@@ -290,7 +290,7 @@ int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, qfp_t vbus_max, qfp
     _memset(foc, 0, sizeof(QFoc));
     foc->motor = motor;
     if(foc->motor->gear_ratio <= 0) {
-        foc->motor->gear_ratio = 1;
+        foc->motor->gear_ratio = 0;
         foc->status = QFOC_STATUS_ERROR;
         foc->err = QFOC_ERR_MOTOR_PARAM;;
         ret = -1;
@@ -446,7 +446,7 @@ int qfoc_vel_update(QFoc *foc, qfp_t vel)
         return -1;
     }
     foc->vel = vel;
-    if(foc->vel_max!= 0) {
+    if(foc->vel_max!= QFOC_NO_LIMIT) {
         if((vel > foc->vel_max) || (vel < -foc->vel_max)) {
             foc->status = QFOC_STATUS_ERROR;
             foc->err = QFOC_ERR_OVMAX;
@@ -463,7 +463,7 @@ int qfoc_epos_update(QFoc *foc, qfp_t epos)
     }
     foc->epos = epos;
     foc->pos = epos / foc->motor->gear_ratio;
-    if((foc->pos_max != 0) || (foc->pos_min != 0)) {
+    if((foc->pos_max != QFOC_NO_LIMIT) || (foc->pos_min != QFOC_NO_LIMIT)) {
         if((foc->pos > foc->pos_max) || (foc->pos < foc->pos_min)) {
             if(foc->pos > foc->pos_max) {
                 foc->err = QFOC_ERR_OPMAX;
@@ -507,7 +507,7 @@ int qfoc_vref_set(QFoc *foc, qfp_t vref)
     if(!_QFOC_ISVALID(foc)) {
         return -1;
     }
-    if(foc->vel_max!= 0) {
+    if(foc->vel_max!= QFOC_NO_LIMIT) {
         foc->vref = (vref > foc->vel_max) ? foc->vel_max: ((vref < -foc->vel_max) ? -foc->vel_max: vref);
     } else {
         foc->vref = vref;
@@ -520,7 +520,7 @@ int qfoc_pref_set(QFoc *foc, qfp_t pref)
     if(!_QFOC_ISVALID(foc)) {
         return -1;
     }
-    if((foc->pos_max == 0) && (foc->pos_min == 0)) {
+    if((foc->pos_max == QFOC_NO_LIMIT) && (foc->pos_min == QFOC_NO_LIMIT)) {
         foc->pref = pref;
     } else {
         foc->pref = (pref > foc->pos_max) ? foc->pos_max : ((pref < foc->pos_min) ? foc->pos_min : pref);
@@ -638,7 +638,7 @@ int qfoc_ovloop_update(QFoc *foc, qfp_t dmax)
     }
     qfp_t vref = foc->vloop_controller(foc);
     qfp_t dv = vref - foc->vq;
-    if(dmax != 0) {
+    if(dmax != QFOC_NO_LIMIT) {
         if(dv > dmax) {
             foc->vq += dmax;
         } else if(dv < -dmax) {
@@ -660,7 +660,7 @@ int qfoc_ploop_update(QFoc *foc, qfp_t dmax)
     }
     qfp_t ref = foc->ploop_controller(foc);
     qfp_t di = ref - foc->iq;
-    if(dmax != 0) {
+    if(dmax != QFOC_NO_LIMIT) {
         if(di > dmax) {
             foc->iqref += dmax;
         } else if(di < -dmax) {
@@ -682,7 +682,7 @@ int qfoc_oploop_update(QFoc *foc, qfp_t dmax)
     }
     qfp_t ref = foc->ploop_controller(foc);
     qfp_t dv = ref - foc->vq;
-    if(dmax != 0) {
+    if(dmax != QFOC_NO_LIMIT) {
         if(dv > dmax) {
             foc->vq += dmax;
         } else if(dv < -dmax) {
@@ -704,7 +704,7 @@ int qfoc_vploop_update(QFoc *foc, qfp_t dmax)
     }
     qfp_t ref = foc->ploop_controller(foc);
     qfp_t dv = ref - foc->vel;
-    if(dmax != 0) {
+    if(dmax != QFOC_NO_LIMIT) {
         if(dv > dmax) {
             foc->vref += dmax;
         } else if(dv < -dmax) {
