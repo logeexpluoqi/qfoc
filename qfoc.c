@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2025-01-15 17:39
+ * @ Modified time: 2025-02-10 13:44
  * @ Description:
  */
 
@@ -10,6 +10,11 @@
 
 #define _QFOC_NULL ((void *)0)
 #define _QFOC_ISVALID(obj)   ((obj) != _QFOC_NULL)
+
+static inline  qfp_t _clamp(qfp_t val, qfp_t min, qfp_t max)
+{
+    return (val > max) ? max : ((val < min) ? min : val);
+}
 
 static void *_memset(void *dest, int c, uint32_t n)
 {
@@ -290,7 +295,7 @@ int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, qfp_t vbus_max, qfp
     _memset(foc, 0, sizeof(QFoc));
     foc->motor = motor;
     if(foc->motor->gear_ratio <= 0) {
-        foc->motor->gear_ratio = 0;
+        foc->motor->gear_ratio = 1;
         foc->status = QFOC_STATUS_ERROR;
         foc->err = QFOC_ERR_MOTOR_PARAM;;
         ret = -1;
@@ -458,11 +463,14 @@ int qfoc_vel_update(QFoc *foc, qfp_t vel)
 
 int qfoc_epos_update(QFoc *foc, qfp_t epos)
 {
-    if(!_QFOC_ISVALID(foc)) {
+    if(!_QFOC_ISVALID(foc) || !_QFOC_ISVALID(foc->motor) || (foc->motor->gear_ratio <= 0)) {
+        foc->status = QFOC_STATUS_ERROR;
+        foc->err = QFOC_ERR_MOTOR_PARAM;
         return -1;
     }
     foc->epos = epos;
     foc->pos = epos / foc->motor->gear_ratio;
+    
     if((foc->pos_max != QFOC_NO_LIMIT) || (foc->pos_min != QFOC_NO_LIMIT)) {
         if((foc->pos > foc->pos_max) || (foc->pos < foc->pos_min)) {
             if(foc->pos > foc->pos_max) {
@@ -487,8 +495,8 @@ int qfoc_vqd_set(QFoc *foc, qfp_t vq, qfp_t vd)
     if(!_QFOC_ISVALID(foc)) {
         return -1;
     }
-    foc->vq = (vq > foc->vbus) ? foc->vbus : ((vq < -foc->vbus) ? -foc->vbus : vq);
-    foc->vd = (vd > foc->vbus) ? foc->vbus : ((vd < -foc->vbus) ? -foc->vbus : vd);
+    foc->vq = _clamp(vq, -foc->vbus, foc->vbus);
+    foc->vd = _clamp(vd, -foc->vbus, foc->vbus);
     return 0;
 }
 
@@ -497,8 +505,8 @@ int qfoc_iref_set(QFoc *foc, qfp_t iqref, qfp_t idref)
     if(!_QFOC_ISVALID(foc)) {
         return -1;
     }
-    foc->iqref = (iqref > foc->imax) ? foc->imax : ((iqref < -foc->imax) ? -foc->imax : iqref);
-    foc->idref = (idref > foc->imax) ? foc->imax : ((idref < -foc->imax) ? -foc->imax : idref);
+    foc->iqref = _clamp(iqref, -foc->imax, foc->imax);
+    foc->idref = _clamp(idref, -foc->imax, foc->imax);
     return 0;
 }
 
@@ -508,7 +516,7 @@ int qfoc_vref_set(QFoc *foc, qfp_t vref)
         return -1;
     }
     if(foc->vel_max!= QFOC_NO_LIMIT) {
-        foc->vref = (vref > foc->vel_max) ? foc->vel_max: ((vref < -foc->vel_max) ? -foc->vel_max: vref);
+        foc->vref = _clamp(vref, -foc->vel_max, foc->vel_max);
     } else {
         foc->vref = vref;
     }
@@ -523,7 +531,7 @@ int qfoc_pref_set(QFoc *foc, qfp_t pref)
     if((foc->pos_max == QFOC_NO_LIMIT) && (foc->pos_min == QFOC_NO_LIMIT)) {
         foc->pref = pref;
     } else {
-        foc->pref = (pref > foc->pos_max) ? foc->pos_max : ((pref < foc->pos_min) ? foc->pos_min : pref);
+        foc->pref = _clamp(pref, foc->pos_min, foc->pos_max);
     }
     return 0;
 }
