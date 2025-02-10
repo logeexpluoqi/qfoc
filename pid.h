@@ -13,69 +13,73 @@ extern "C"
 {
 #endif
 
+#ifndef qfp_t
+typedef float qfp_t;
+#endif
+
 typedef struct pid_structure
 {
-    float kp, ki, kd;
-    float ek1;
-    float edk1;  // last d(ek)
-    float yk, yk1;
-    float delta_k;
+    qfp_t kp, ki, kd;
+    qfp_t ek1;
+    qfp_t edk1;  // last d(ek)
+    qfp_t yk, yk1;
+    qfp_t delta_k;
 
     /* used in incomplete differential PID */
-    float edk2;
+    qfp_t edk2;
     /* used in incomplete differential 
         or integral separation threshold  */
-    float alpha; // 0 < alpha < 1
+    qfp_t alpha; // 0 < alpha < 1
 
     /* used in integral varible PID */
-    float lth; // low threshold in integral varible PID
-    float hth; // high threshold in integral varible PID
+    qfp_t lth; // low threshold in integral varible PID
+    qfp_t hth; // high threshold in integral varible PID
 
     /* used in differencail first PID */
-    float eyk1; // last d(yk)
-    float eyk2;
+    qfp_t eyk1; // last d(yk)
+    qfp_t eyk2;
 
-    float olimit;
+    qfp_t olimit;
 } PidObj;
 
-#define PID_NO_LIMIT    0
+#define PID_NONE    (0)
 
-int pid_init(PidObj *pid, float kp, float ki, float kd, float olimit);
+int pid_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t olimit);
 
-int pid_param_set(PidObj *pid, float kp, float ki, float kd);
+int pid_param_set(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd);
 
 /* output limit PID or basic PID */
-float pid_calc(PidObj *pid, float err);
+qfp_t pid_calc(PidObj *pid, qfp_t err, qfp_t dt);
 
 /* incomplete differential PID */
-int pid_incplt_diff_init(PidObj *pid, float kp, float ki, float kd, float alpha, float olimit);
+int pid_incplt_diff_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t alpha, qfp_t olimit);
 
-float pid_incplt_diff_calc(PidObj *ctrl, float err);
+qfp_t pid_incplt_diff_calc(PidObj *ctrl, qfp_t err, qfp_t dt);
 
 /* integral separation PID */
-int pid_int_sep_init(PidObj *pid, float kp, float ki, float kd, float alpha, float olimit);
+int pid_int_sep_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t alpha, qfp_t olimit);
 
-float pid_int_sep_calc(PidObj *pid, float err);
+qfp_t pid_int_sep_calc(PidObj *pid, qfp_t err, qfp_t dt);
 
 /* integral varible PID */
-int pid_int_var_init(PidObj *pid, float kp, float ki, float kd, float lth, float hth, float olimit);
+int pid_int_var_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t lth, qfp_t hth, qfp_t olimit);
 
-float pid_int_var_calc(PidObj *pid, float err);
+qfp_t pid_int_var_calc(PidObj *pid, qfp_t err, qfp_t dt);
 
 /* differential first PID */
-int pid_diff_first_init(PidObj *pid, float kp, float ki, float kd, float alpha, float olimit);
+int pid_diff_first_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t alpha, qfp_t olimit);
 
-float pid_diff_first_calc(PidObj *pid, float err);
+qfp_t pid_diff_first_calc(PidObj *pid, qfp_t err, qfp_t dt);
 
 /* incomplete differential and integral varible PID */
-int pid_incplt_diff_int_var_init(PidObj *pid, float kp, float ki, float kd, float alpha, float lth, float hth, float olimit);
+int pid_incplt_diff_int_var_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t alpha, qfp_t lth, qfp_t hth, qfp_t olimit);
 
-float pid_incplt_diff_int_var_calc(PidObj *ctrl, float err);
+qfp_t pid_incplt_diff_int_var_calc(PidObj *ctrl, qfp_t err, qfp_t dt);
 
 /* differential first and integral varible PID */
-int pid_diff_first_int_var_init(PidObj *pid, float kp, float ki, float kd, float alpha, float lth, float hth, float olimit);
+int pid_diff_first_int_var_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t alpha, qfp_t lth, qfp_t hth, qfp_t olimit);
 
-float pid_diff_first_int_var_calc(PidObj *pid, float err);
+qfp_t pid_diff_first_int_var_calc(PidObj *pid, qfp_t err, qfp_t dt);
 
 int pid_clr(PidObj *pid);
 

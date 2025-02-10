@@ -12,20 +12,24 @@
  extern "C" {
 #endif
 
+#ifndef qfp_t
+typedef float qfp_t;
+#endif
+
 typedef struct _hpf_first_order
 {
-    float fc;       // cut-off frequency
-    float y_k1;     // last output
-    float alpha;    // filter coefficient
-    float ts;       // samping period
-    float u_k1;     // last input
+    qfp_t fc;       // cut-off frequency
+    qfp_t y_k1;     // last output
+    qfp_t alpha;    // filter coefficient
+    qfp_t ts;       // samping period
+    qfp_t u_k1;     // last input
 }Hpf1stObj;
 
-int hpf_1st_init(Hpf1stObj *filter, float fc, float ts);
+int hpf_1st_init(Hpf1stObj *filter, qfp_t fc, qfp_t fs);
 
-float hpf_1st_calcu(Hpf1stObj *filter, float u_k);
+qfp_t hpf_1st_calcu(Hpf1stObj *filter, qfp_t u_k);
 
-int hpf_1st_fc_set(Hpf1stObj *filter, float fc);
+int hpf_1st_fc_set(Hpf1stObj *filter, qfp_t fc);
 
 #ifdef __cplusplus
  }

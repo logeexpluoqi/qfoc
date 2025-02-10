@@ -2,18 +2,34 @@
  * @Author: luoqi
  * @Date: 2021-04-27 19:20:38
  * @ Modified by: luoqi
- * @ Modified time: 2025-01-15 17:37
+ * @ Modified time: 2025-02-11 00:10
  */
 
 #include "pid.h"
 
-static inline float _abs(float x)
+static inline qfp_t _abs(qfp_t x)
 {
     return x > 0 ? x : -x;
 }
 
-int pid_init(PidObj *pid, float kp, float ki, float kd, float olimit)
+static inline qfp_t update_pid_output(PidObj *pid)
 {
+    if(pid->olimit != PID_NONE) {
+        if(pid->yk > pid->olimit) {
+            pid->yk = pid->olimit;
+        } else if(pid->yk < -pid->olimit) {
+            pid->yk = -pid->olimit;
+        }
+    }
+    pid->yk1 = pid->yk;
+    return pid->yk;
+}
+
+int pid_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t olimit)
+{
+    if(!pid) {
+        return -1;
+    }
     pid->delta_k = 0;
     pid->ek1 = 0;
     pid->edk1 = 0;
@@ -23,21 +39,33 @@ int pid_init(PidObj *pid, float kp, float ki, float kd, float olimit)
     pid->kp = kp;
     pid->ki = ki;
     pid->kd = kd;
+    pid->alpha = 1;
     pid->olimit = olimit;
     return 0;
 }
 
-int pid_param_set(PidObj *pid, float kp, float ki, float kd)
+int pid_param_set(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd)
 {
+    if(!pid) {
+        return -1;
+    }
     pid->kp = kp;
     pid->ki = ki;
     pid->kd = kd;
     return 0;
 }
 
-float pid_calc(PidObj *pid, float err)
+qfp_t pid_calc(PidObj *pid, qfp_t err, qfp_t dt)
 {
-    float edk = err - pid->ek1;
+    if(!pid) {
+        return -1;
+    }
+    qfp_t edk = 0;
+    if(dt != PID_NONE) {
+        edk = (err - pid->ek1) / dt;
+    } else {
+        edk = err - pid->ek1;
+    }
     pid->delta_k = pid->kp * (err - pid->ek1)
         + pid->ki * err
         + pid->kd * (edk - pid->edk1);
@@ -46,26 +74,16 @@ float pid_calc(PidObj *pid, float err)
     pid->ek1 = err;
     pid->yk = pid->yk1 + pid->delta_k;
 
-    if(pid->olimit != PID_NO_LIMIT) {
-        if(pid->yk > pid->olimit) {
-            pid->yk = pid->olimit;
-            pid->yk1 = pid->yk;
-        } else if(pid->yk < -pid->olimit) {
-            pid->yk = -pid->olimit;
-            pid->yk1 = pid->yk;
-        } else {
-            pid->yk1 = pid->yk;
-        }
-    } else {
-        pid->yk1 = pid->yk;
-    }
-    return pid->yk;
+    return update_pid_output(pid);
 }
 
-int pid_int_sep_init(PidObj *pid, float kp, float ki, float kd, float alpha, float olimit)
+int pid_int_sep_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t alpha, qfp_t olimit)
 {
+    if(!pid) {
+        return -1;
+    }
     pid_init(pid, kp, ki, kd, olimit);
-    if(pid->alpha < 0) {
+    if(pid->alpha < 0 || pid->alpha > 1) {
         pid->alpha = 1;
         return -1;
     }
@@ -73,10 +91,19 @@ int pid_int_sep_init(PidObj *pid, float kp, float ki, float kd, float alpha, flo
     return 0;
 }
 
-float pid_int_sep_calc(PidObj *pid, float err)
+qfp_t pid_int_sep_calc(PidObj *pid, qfp_t err, qfp_t dt)
 {
+    if(!pid) {
+        return -1;
+    }
+
     int th = _abs(err) > pid->alpha ? 0 : 1;
-    float edk = err - pid->ek1;
+    qfp_t edk = 0;
+    if(dt != PID_NONE) {
+        edk = (err - pid->ek1) / dt;
+    } else {
+        edk = err - pid->ek1;
+    }
 
     pid->delta_k = pid->kp * (err - pid->ek1)
         + th * pid->ki * err
@@ -86,24 +113,15 @@ float pid_int_sep_calc(PidObj *pid, float err)
     pid->ek1 = err;
     pid->yk = pid->yk1 + pid->delta_k;
 
-    if(pid->olimit != PID_NO_LIMIT) {
-        if(pid->yk > pid->olimit) {
-            pid->yk = pid->olimit;
-            pid->yk1 = pid->yk;
-        } else if(pid->yk < -pid->olimit) {
-            pid->yk = -pid->olimit;
-            pid->yk1 = pid->yk;
-        } else {
-            pid->yk1 = pid->yk;
-        }
-    } else {
-        pid->yk1 = pid->yk;
-    }
-    return pid->yk;
+    return update_pid_output(pid);
 }
 
-int pid_incplt_diff_init(PidObj *pid, float kp, float ki, float kd, float alpha, float olimit)
+int pid_incplt_diff_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t alpha, qfp_t olimit)
 {
+    if(!pid) {
+        return -1;
+    }
+    
     pid_init(pid, kp, ki, kd, olimit);
     if((alpha < 0) || (alpha > 1)) {
         pid->alpha = 1;
@@ -113,9 +131,18 @@ int pid_incplt_diff_init(PidObj *pid, float kp, float ki, float kd, float alpha,
     return 0;
 }
 
-float pid_incplt_diff_calc(PidObj *pid, float err)
+qfp_t pid_incplt_diff_calc(PidObj *pid, qfp_t err, qfp_t dt)
 {
-    float edk = err - pid->ek1;
+    if(!pid) {
+        return -1;
+    }
+
+    qfp_t edk = 0;
+    if(dt != PID_NONE) {
+        edk = (err - pid->ek1) / dt;
+    } else {
+        edk = err - pid->ek1;
+    }
 
     pid->delta_k = pid->kp * (err - pid->ek1)
         + pid->ki * err
@@ -125,25 +152,16 @@ float pid_incplt_diff_calc(PidObj *pid, float err)
     pid->ek1 = err;
     pid->yk = pid->yk1 + pid->delta_k;
 
-    if(pid->olimit != 0) {
-        if(pid->yk > pid->olimit) {
-            pid->yk = pid->olimit;
-            pid->yk1 = pid->yk;
-        } else if(pid->yk < -pid->olimit) {
-            pid->yk = -pid->olimit;
-            pid->yk1 = pid->yk;
-        } else {
-            pid->yk1 = pid->yk;
-        }
-    } else {
-        pid->yk1 = pid->yk;
-    }
-    return pid->yk;
+    return update_pid_output(pid);
 }
 
 /* integral varible PID */
-int pid_int_var_init(PidObj *pid, float kp, float ki, float kd, float lth, float hth, float olimit)
+int pid_int_var_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t lth, qfp_t hth, qfp_t olimit)
 {
+    if(!pid) {
+        return -1;
+    }
+    
     pid_init(pid, kp, ki, kd, olimit);
 
     if((lth < 0) || (hth < 0) || (lth > hth)) {
@@ -156,10 +174,19 @@ int pid_int_var_init(PidObj *pid, float kp, float ki, float kd, float lth, float
     return 0;
 }
 
-float pid_int_var_calc(PidObj *pid, float err)
+qfp_t pid_int_var_calc(PidObj *pid, qfp_t err, qfp_t dt)
 {
-    float ratio = 0;
-    float edk = err - pid->ek1;
+    if(!pid) {
+        return -1;
+    }
+
+    qfp_t ratio = 0;
+    qfp_t edk = 0;
+    if(dt != PID_NONE) {
+        edk = (err - pid->ek1) / dt;
+    } else {
+        edk = err - pid->ek1;
+    }
 
     if(_abs(err) <= pid->lth) {
         ratio = 1;
@@ -177,24 +204,15 @@ float pid_int_var_calc(PidObj *pid, float err)
     pid->ek1 = err;
     pid->yk = pid->yk1 + pid->delta_k;
 
-    if(pid->olimit != PID_NO_LIMIT) {
-        if(pid->yk > pid->olimit) {
-            pid->yk = pid->olimit;
-            pid->yk1 = pid->yk;
-        } else if(pid->yk < -pid->olimit) {
-            pid->yk = -pid->olimit;
-            pid->yk1 = pid->yk;
-        } else {
-            pid->yk1 = pid->yk;
-        }
-    } else {
-        pid->yk1 = pid->yk;
-    }
-    return pid->yk;
+    return update_pid_output(pid);
 }
 
-int pid_diff_first_init(PidObj *pid, float kp, float ki, float kd, float alpha, float olimit)
+int pid_diff_first_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t alpha, qfp_t olimit)
 {
+    if(!pid) {
+        return -1;
+    }
+    
     pid_init(pid, kp, ki, kd, olimit);
     if(pid->alpha < 0 || pid->alpha > 1) {
         pid->alpha = 0;
@@ -204,9 +222,13 @@ int pid_diff_first_init(PidObj *pid, float kp, float ki, float kd, float alpha, 
     return 0;
 }
 
-float pid_diff_first_calc(PidObj *pid, float err)
+qfp_t pid_diff_first_calc(PidObj *pid, qfp_t err, qfp_t dt)
 {
-    float eyk = pid->delta_k;
+    if(!pid) {
+        return -1;
+    }
+
+    qfp_t eyk = pid->delta_k;
 
     pid->delta_k = pid->kp * (err - pid->ek1)
         + pid->ki * err
@@ -217,25 +239,16 @@ float pid_diff_first_calc(PidObj *pid, float err)
     pid->ek1 = err;
     pid->yk = pid->yk1 + pid->delta_k;
 
-    if(pid->olimit != PID_NO_LIMIT) {
-        if(pid->yk > pid->olimit) {
-            pid->yk = pid->olimit;
-            pid->yk1 = pid->yk;
-        } else if(pid->yk < -pid->olimit) {
-            pid->yk = -pid->olimit;
-            pid->yk1 = pid->yk;
-        } else {
-            pid->yk1 = pid->yk;
-        }
-    } else {
-        pid->yk1 = pid->yk;
-    }
-    return pid->yk;
+    return update_pid_output(pid);
 }
 
 /* incomplete differential and integral varible PID */
-int pid_incplt_diff_int_var_init(PidObj *pid, float kp, float ki, float kd, float alpha, float lth, float hth, float olimit)
+int pid_incplt_diff_int_var_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t alpha, qfp_t lth, qfp_t hth, qfp_t olimit)
 {
+    if(!pid) {
+        return -1;
+    }
+    
     pid_init(pid, kp, ki, kd, olimit);
     if((alpha < 0) || (alpha > 1)) {
         pid->alpha = 1;
@@ -251,10 +264,19 @@ int pid_incplt_diff_int_var_init(PidObj *pid, float kp, float ki, float kd, floa
     return 0;
 }
 
-float pid_incplt_diff_int_var_calc(PidObj *pid, float err)
+qfp_t pid_incplt_diff_int_var_calc(PidObj *pid, qfp_t err, qfp_t dt)
 {
-    float edk = err - pid->ek1;
-    float ratio = 0;
+    if(!pid) {
+        return -1;
+    }
+
+    qfp_t edk = 0;
+    if(dt != PID_NONE) {
+        edk = (err - pid->ek1) / dt;
+    } else {
+        edk = err - pid->ek1;
+    }
+    qfp_t ratio = 0;
 
     if(_abs(err) <= pid->lth) {
         ratio = 1;
@@ -272,25 +294,16 @@ float pid_incplt_diff_int_var_calc(PidObj *pid, float err)
     pid->ek1 = err;
     pid->yk = pid->yk1 + pid->delta_k;
 
-    if(pid->olimit != PID_NO_LIMIT) {
-        if(pid->yk > pid->olimit) {
-            pid->yk = pid->olimit;
-            pid->yk1 = pid->yk;
-        } else if(pid->yk < -pid->olimit) {
-            pid->yk = -pid->olimit;
-            pid->yk1 = pid->yk;
-        } else {
-            pid->yk1 = pid->yk;
-        }
-    } else {
-        pid->yk1 = pid->yk;
-    }
-    return pid->yk;
+    return update_pid_output(pid);
 }
 
 /* differential first and integral varible PID */
-int pid_diff_first_int_var_init(PidObj *pid, float kp, float ki, float kd, float alpha, float lth, float hth, float olimit)
+int pid_diff_first_int_var_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t alpha, qfp_t lth, qfp_t hth, qfp_t olimit)
 {
+    if(!pid) {
+        return -1;
+    }
+    
     pid_init(pid, kp, ki, kd, olimit);
     if((alpha < 0) || (alpha > 1)) {
         pid->alpha = 1;
@@ -306,10 +319,14 @@ int pid_diff_first_int_var_init(PidObj *pid, float kp, float ki, float kd, float
     return 0;
 }
 
-float pid_diff_first_int_var_calc(PidObj *pid, float err)
+qfp_t pid_diff_first_int_var_calc(PidObj *pid, qfp_t err, qfp_t dt)
 {
-    float eyk = pid->delta_k;
-    float ratio = 0;
+    if(!pid) {
+        return -1;
+    }
+
+    qfp_t eyk = pid->delta_k;
+    qfp_t ratio = 0;
 
     if(_abs(err) <= pid->lth) {
         ratio = 1;
@@ -328,24 +345,15 @@ float pid_diff_first_int_var_calc(PidObj *pid, float err)
     pid->ek1 = err;
     pid->yk = pid->yk1 + pid->delta_k;
 
-    if(pid->olimit != PID_NO_LIMIT) {
-        if(pid->yk > pid->olimit) {
-            pid->yk = pid->olimit;
-            pid->yk1 = pid->yk;
-        } else if(pid->yk < -pid->olimit) {
-            pid->yk = -pid->olimit;
-            pid->yk1 = pid->yk;
-        } else {
-            pid->yk1 = pid->yk;
-        }
-    } else {
-        pid->yk1 = pid->yk;
-    }
-    return pid->yk;
+    return update_pid_output(pid);
 }
 
 int pid_clr(PidObj *pid)
 {
+    if(!pid) {
+        return -1;
+    }
+    
     pid->yk = 0;
     pid->yk1 = 0;
     pid->delta_k = 0;
@@ -359,6 +367,10 @@ int pid_clr(PidObj *pid)
 
 int pid_calc_clr(PidObj *pid)
 {
+    if(!pid) {
+        return -1;
+    }
+
     pid->delta_k = 0;
     pid->ek1 = 0;
     pid->edk1 = 0;

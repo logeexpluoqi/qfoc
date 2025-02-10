@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-07-22 15:37
  * @ Modified by: luoqi
- * @ Modified time: 2024-11-15 17:22
+ * @ Modified time: 2025-02-11 00:23
  * @ Description:
  */
 
@@ -13,20 +13,21 @@
  extern "C" {
 #endif
 
-#include <stdint.h>
+#ifndef qfp_t
+typedef float qfp_t;
+#endif
 
 typedef struct _lpf_sa
 {
     int wsize;
     int head;
-    uint8_t isfull;
-    float sum;
-    float *buf;
+    qfp_t sum;
+    qfp_t *cache;
 } LpfMaf;
 
-void maf_init(LpfMaf *filter, float *buf, int wsize);
+int maf_init(LpfMaf *filter, qfp_t *cache, int wsize);
 
-float maf_calc(LpfMaf *filter, float uk);
+qfp_t maf_calc(LpfMaf *filter, qfp_t z);
 
 #ifdef __cplusplus
  }

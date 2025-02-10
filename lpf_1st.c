@@ -7,37 +7,52 @@
 
 #include "lpf_1st.h"
 
-#define LPF_PI  3.1415926
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
-int lpf_1st_init(Lpf1stObj *filter, float fc, float fs)
+int lpf_1st_init(Lpf1stObj *filter, qfp_t fc, qfp_t fs)
 {
-    float ts = 1 / fs;
-    filter->alpha = (2 * LPF_PI * ts * fc) / (1 + 2 * LPF_PI * ts * fc);;
+    if (!filter || fs <= 0) {
+        return -1;
+    }
+    qfp_t ts = 1.0f / fs;
+    filter->alpha = (2 * M_PI * ts * fc) / (1 + 2 * M_PI * ts * fc);
     filter->fc = fc;
     filter->ts = ts;
     filter->y_k1 = 0;
     return 0;
 }
 
-int lpf_1st_fc_set(Lpf1stObj *filter, float fc)
+int lpf_1st_fc_set(Lpf1stObj *filter, qfp_t fc)
 {
-    filter->alpha = (2 * LPF_PI * filter->ts * fc) / (1 + 2 * LPF_PI * filter->ts * fc);
+    if (!filter || filter->ts <= 0) {
+        return -1;
+    }
+    filter->alpha = (2 * M_PI * filter->ts * fc) / (1 + 2 * M_PI * filter->ts * fc);
     filter->fc = fc;
     return 0;
 }
 
-float lpf_1st_calc(Lpf1stObj *filter, float uk)
+qfp_t lpf_1st_calc(Lpf1stObj *filter, qfp_t uk)
 {
-    float y_k = filter->alpha * uk + (1 - filter->alpha) * filter->y_k1;
+    if(!filter) {
+        return 0;
+    }
+    qfp_t y_k = filter->alpha * uk + (1 - filter->alpha) * filter->y_k1;
     filter->y_k1 = y_k;
 
     return y_k;
 }
 
-float lpf_1st_kcalc(Lpf1stObj *filter, float uk, float ts)
+qfp_t lpf_1st_kcalc(Lpf1stObj *filter, qfp_t uk, qfp_t fs)
 {
-    float alpha = (2 * LPF_PI * ts * filter->fc) / (1 + 2 * LPF_PI * ts * filter->fc);
-    float y_k = alpha * uk + (1 - alpha) * filter->y_k1;
+    if(!filter || fs <= 0) {
+        return 0;
+    }
+    qfp_t ts = 1.0f / fs;
+    qfp_t alpha = (2 * M_PI * ts * filter->fc) / (1 + 2 * M_PI * ts * filter->fc);
+    qfp_t y_k = alpha * uk + (1 - alpha) * filter->y_k1;
     filter->y_k1 = y_k;
     return y_k;
 }

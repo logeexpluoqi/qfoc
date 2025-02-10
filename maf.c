@@ -2,33 +2,35 @@
  * @ Author: luoqi
  * @ Create Time: 2024-07-22 15:37
  * @ Modified by: luoqi
- * @ Modified time: 2024-11-15 17:24
+ * @ Modified time: 2025-02-11 00:23
  * @ Description:
  */
 
 #include "maf.h"
 
-void maf_init(LpfMaf *filter, float *buf, int wsize)
+int maf_init(LpfMaf *filter, qfp_t *cache, int wsize)
 {
+    if(!filter || !cache || wsize <= 0) {
+        return -1;
+    }
     filter->wsize = wsize;
-    filter->buf = buf;
+    filter->cache = cache;
     filter->sum = 0;
     filter->head = 0;
-    filter->isfull = 0;
+    return 0;
 }
 
-float maf_calc(LpfMaf *filter, float uk)
+qfp_t maf_calc(LpfMaf *filter, qfp_t z)
 {
-    filter->buf[filter->head] = uk;
-    if(filter->isfull == 0 && filter->head + 1 == filter->wsize){
-        filter->isfull = 1;
+    if (!filter || !filter->cache || filter->wsize <= 0) {
+        return 0;
     }
+    filter->sum -= filter->cache[filter->head];
+    
+    filter->cache[filter->head] = z;
+    filter->sum += z;
+    
     filter->head = (filter->head + 1) % filter->wsize;
-    if(!filter->isfull) {
-        filter->sum += uk;
-        return uk;
-    }else {
-        filter->sum += uk - filter->buf[filter->head];
-        return (filter->sum / (float)filter->wsize);
-    }
+    
+    return filter->sum / (qfp_t)filter->wsize;
 }
