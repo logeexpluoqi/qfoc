@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2025-02-10 13:44
+ * @ Modified time: 2025-02-11 20:12
  * @ Description:
  */
 
@@ -57,32 +57,28 @@ static const qfp_t _QFOC_2_BY_3 = 0.666666666666667f;
 #define _QFOC_MAX(x, y)  ((x) >= (y) ? (x) : (y))
 #define _QFOC_MIN(x, y)  ((x) <= (y) ? (x) : (y))
 
-static const qfp_t _QFOC_FSIN_MAGIC = 0.017453292519943295769236907684886f;
+#define _DEG2RAD (0.017453292519943295769236907684886f)
 
-static const qfp_t _sin_table[] = {
-    0.0,                                    // sin(0)
-    0.17364817766693034885171662676931 ,    // sin(10)
-    0.34202014332566873304409961468226 ,    // sin(20)
-    0.5 ,                                   // sin(30)
-    0.64278760968653932632264340990726 ,    // sin(40)
-    0.76604444311897803520239265055542 ,    // sin(50)
-    0.86602540378443864676372317075294 ,    // sin(60)
-    0.93969262078590838405410927732473 ,    // sin(70)
-    0.98480775301220805936674302458952 ,    // sin(80)
-    1.0                                     // sin(90)
-};
-
-static const qfp_t _cos_table[] = {
-    1.0 ,                                   // cos(0)
-    0.99984769515639123915701155881391 ,    // cos(1)
-    0.99939082701909573000624344004393 ,    // cos(2)
-    0.99862953475457387378449205843944 ,    // cos(3)
-    0.99756405025982424761316268064426 ,    // cos(4)
-    0.99619469809174553229501040247389 ,    // cos(5)
-    0.99452189536827333692269194498057 ,    // cos(6)
-    0.99254615164132203498006158933058 ,    // cos(7)
-    0.99026806874157031508377486734485 ,    // cos(8)
-    0.98768834059513772619004024769344      // cos(9)
+static const qfp_t _fast_sin_table[91] = {
+    0.0,           0.017452406,   0.034899497,   0.052335956,   0.069756474,
+    0.087155743,   0.104528463,   0.121869343,   0.139173101,   0.156434465,
+    0.173648178,   0.190809,      0.207911,      0.224951,      0.241922,
+    0.258819,      0.275637,      0.292372,      0.309017,      0.325568,
+    0.342020,      0.358368,      0.374607,      0.390731,      0.406737,
+    0.422618,      0.438371,      0.453990,      0.469472,      0.48481,
+    0.5,           0.515038,      0.529919,      0.544639,      0.559193,
+    0.573576,      0.587785,      0.601815,      0.615661,      0.62932,
+    0.642788,      0.656059,      0.669131,      0.681998,      0.694658,
+    0.707107,      0.71934,       0.731354,      0.743145,      0.75471,
+    0.766044,      0.777146,      0.788011,      0.798636,      0.809017,
+    0.819152,      0.829038,      0.838671,      0.848048,      0.857167,
+    0.866025,      0.87462,       0.882948,      0.891007,      0.898794,
+    0.906308,      0.913545,      0.920505,      0.927184,      0.93358,
+    0.939693,      0.945519,      0.951057,      0.956305,      0.961262,
+    0.965926,      0.970296,      0.97437,       0.978148,      0.981627,
+    0.984808,      0.987688,      0.990268,      0.992546,      0.994522,
+    0.996195,      0.997564,      0.99863,       0.999391,      0.999848,
+    1.0
 };
 
 static qfp_t _fatan2(qfp_t y, qfp_t x)
@@ -112,33 +108,34 @@ static qfp_t _fatan2(qfp_t y, qfp_t x)
     return r;
 }
 
-static qfp_t _fsind(qfp_t x)
+static qfp_t _fsin(qfp_t deg)
 {
-    int s = 0;
+    deg = _fmodf(deg, 360);
 
-    x = _fmodf(x, 360);
-
-    x = x < 0 ? x + 360 : x;
-
-    if(x >= 180) {
-        s = -1;
-        x = x - 180;
+    int sign = 1;
+    // Use the periodic symmetry of sin
+    if(deg > 180) {
+        deg -= 180;
+        sign = -1;
+    }
+    if(deg > 90) {
+        deg = 180 - deg;
     }
 
-    x = (x > 90) ? (180 - x) : x;
+    // Calculate the lookup table index and interpolation factor
+    int index = (int)deg;  // 1° resolution
+    if(index >= 90){
+        return sign * _fast_sin_table[90];
+    }
+    qfp_t fraction = deg - index;
 
-    int a = x * 0.1f;
-    qfp_t b = x - 10 * a;
-
-    qfp_t y = _sin_table[a] * _cos_table[(int)b] + b * _QFOC_FSIN_MAGIC * _sin_table[9 - a];
-
-    y = (s < 0) ? -y : y;
-    return y;
+    qfp_t sin_val = _fast_sin_table[index] * (1 - fraction) + _fast_sin_table[index + 1] * fraction;
+    return sign * sin_val;
 }
 
-static inline qfp_t _fcosd(qfp_t x)
+static inline qfp_t _fcos(qfp_t deg)
 {
-    return _fsind(x + 90);
+    return _fsin(deg + 90);
 }
 
 static inline qfp_t _fsqrt(qfp_t x)
@@ -147,8 +144,8 @@ static inline qfp_t _fsqrt(qfp_t x)
         qfp_t f;
         int i;
     } conv;
-	qfp_t x2;
-	x2 = x * 0.5f;
+    qfp_t x2;
+    x2 = x * 0.5f;
     conv.f = x;
     conv.i = 0x5f3504f3 - (conv.i >> 1);
     x = conv.f;
@@ -261,15 +258,15 @@ static inline int _iclarke_transform(qfp_t alpha, qfp_t beta, qfp_t *a, qfp_t *b
 
 static inline int _park_transform(qfp_t alpha, qfp_t beta, qfp_t edegree, qfp_t *q, qfp_t *d)
 {
-    *q = -alpha * _fsind(edegree) + beta * _fcosd(edegree);
-    *d = alpha * _fcosd(edegree) + beta * _fsind(edegree);
+    *q = -alpha * _fsin(edegree) + beta * _fcos(edegree);
+    *d = alpha * _fcos(edegree) + beta * _fsin(edegree);
     return 0;
 }
 
 static inline int _ipark_transform(qfp_t q, qfp_t d, qfp_t edegree, qfp_t *alpha, qfp_t *beta)
 {
-    *alpha = d * _fcosd(edegree) - q * _fsind(edegree);
-    *beta = d * _fsind(edegree) + q * _fcosd(edegree);
+    *alpha = d * _fcos(edegree) - q * _fsin(edegree);
+    *beta = d * _fsin(edegree) + q * _fcos(edegree);
     return 0;
 }
 
@@ -328,7 +325,7 @@ int qfoc_init(QFoc *foc, PmsmMotor *motor, uint16_t pwm_max, qfp_t vbus_max, qfp
     foc->i2t_times = i2t_times;
     foc->pwm_max = pwm_max;
     foc->vbus_max = vbus_max;
-    foc->vel_max= vel_max;
+    foc->vel_max = vel_max;
     foc->pos_max = pos_max;
     foc->pos_min = pos_min;
     if(imax <= 0) {
@@ -349,12 +346,12 @@ int qfoc_iloop_controller_set(QFoc *foc, int (*controller)(QFoc *foc, qfp_t *vq,
     if(!_QFOC_ISVALID(foc)) {
         return -1;
     }
-    
+
     foc->iloop_controller = controller;
     return 0;
-}   
+}
 
-int qfoc_ploop_controller_set(QFoc *foc, qfp_t (*controller)(QFoc *foc))
+int qfoc_ploop_controller_set(QFoc *foc, qfp_t(*controller)(QFoc *foc))
 {
     if(!_QFOC_ISVALID(foc)) {
         return -1;
@@ -363,7 +360,7 @@ int qfoc_ploop_controller_set(QFoc *foc, qfp_t (*controller)(QFoc *foc))
     return 0;
 }
 
-int qfoc_vloop_controller_set(QFoc *foc, qfp_t (*controller)(QFoc *foc))
+int qfoc_vloop_controller_set(QFoc *foc, qfp_t(*controller)(QFoc *foc))
 {
     if(!_QFOC_ISVALID(foc)) {
         return -1;
@@ -415,7 +412,7 @@ int qfoc_i_update(QFoc *foc, qfp_t ia, qfp_t ib, qfp_t ic)
     foc->ia = ia;
     foc->ib = ib;
     foc->ic = ic;
-    
+
     if((_QFOC_ABS(ia) > foc->iphase_max) || (_QFOC_ABS(ib) > foc->iphase_max) || (_QFOC_ABS(ic) > foc->iphase_max)) {
         foc->status = QFOC_STATUS_ERROR;
         foc->err = QFOC_ERR_OIMAX;
@@ -451,13 +448,13 @@ int qfoc_vel_update(QFoc *foc, qfp_t vel)
         return -1;
     }
     foc->vel = vel;
-    if(foc->vel_max!= QFOC_NO_LIMIT) {
+    if(foc->vel_max != QFOC_NO_LIMIT) {
         if((vel > foc->vel_max) || (vel < -foc->vel_max)) {
             foc->status = QFOC_STATUS_ERROR;
             foc->err = QFOC_ERR_OVMAX;
             return -1;
         }
-    } 
+    }
     return 0;
 }
 
@@ -470,7 +467,7 @@ int qfoc_epos_update(QFoc *foc, qfp_t epos)
     }
     foc->epos = epos;
     foc->pos = epos / foc->motor->gear_ratio;
-    
+
     if((foc->pos_max != QFOC_NO_LIMIT) || (foc->pos_min != QFOC_NO_LIMIT)) {
         if((foc->pos > foc->pos_max) || (foc->pos < foc->pos_min)) {
             if(foc->pos > foc->pos_max) {
@@ -515,7 +512,7 @@ int qfoc_vref_set(QFoc *foc, qfp_t vref)
     if(!_QFOC_ISVALID(foc)) {
         return -1;
     }
-    if(foc->vel_max!= QFOC_NO_LIMIT) {
+    if(foc->vel_max != QFOC_NO_LIMIT) {
         foc->vref = _clamp(vref, -foc->vel_max, foc->vel_max);
     } else {
         foc->vref = vref;
@@ -609,7 +606,7 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
     foc->pwma = (uint16_t)(ta * foc->pwm_max);
     foc->pwmb = (uint16_t)(tb * foc->pwm_max);
     foc->pwmc = (uint16_t)(tc * foc->pwm_max);
-    
+
     *pwma = foc->pwma > foc->pwm_max ? foc->pwm_max : foc->pwma;
     *pwmb = foc->pwmb > foc->pwm_max ? foc->pwm_max : foc->pwmb;
     *pwmc = foc->pwmc > foc->pwm_max ? foc->pwm_max : foc->pwmc;
