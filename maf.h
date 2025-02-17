@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-07-22 15:37
  * @ Modified by: luoqi
- * @ Modified time: 2025-02-11 00:23
+ * @ Modified time: 2025-02-17 15:00
  * @ Description:
  */
 
@@ -22,10 +22,10 @@ typedef struct _lpf_sa
     int wsize;
     int head;
     qfp_t sum;
-    qfp_t *cache;
+    qfp_t *buf;
 } LpfMaf;
 
-int maf_init(LpfMaf *filter, qfp_t *cache, int wsize);
+int maf_init(LpfMaf *filter, qfp_t *buf, int wsize);
 
 qfp_t maf_calc(LpfMaf *filter, qfp_t z);
 
