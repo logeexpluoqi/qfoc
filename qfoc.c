@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2025-02-17 20:48
+ * @ Modified time: 2025-02-24 17:09
  * @ Description:
  */
 
@@ -50,9 +50,20 @@ static const qfp_t _QFOC_TWO_BY_SQRT3 = 1.154700538379252f;
 static const qfp_t _QFOC_SQRT3_BY_2 = 0.866025403784439f;
 static const qfp_t _QFOC_2_BY_3 = 0.666666666666667f;
 
-#define _QFOC_ABS(x)     ((x) >= 0 ? (x) : (-x))
-#define _QFOC_MAX(x, y)  ((x) >= (y) ? (x) : (y))
-#define _QFOC_MIN(x, y)  ((x) <= (y) ? (x) : (y))
+static inline qfp_t _abs(qfp_t x)
+{
+    return (x >= 0) ? x : -x;
+}
+
+static inline qfp_t _max(qfp_t x, qfp_t y)
+{
+    return (x >= y) ? x : y;
+}
+
+static inline qfp_t _min(qfp_t x, qfp_t y)
+{
+    return (x <= y) ? x : y;
+}
 
 #define _DEG2RAD (0.017453292519943295769236907684886f)
 
@@ -81,10 +92,10 @@ static const qfp_t _fast_sin_table[91] = {
 static qfp_t _fatan2(qfp_t y, qfp_t x)
 {
     // a := min (|x|, |y|) / max (|x|, |y|)
-    qfp_t abs_y = _QFOC_ABS(y);
-    qfp_t abs_x = _QFOC_ABS(x);
+    qfp_t abs_y = _abs(y);
+    qfp_t abs_x = _abs(x);
     // inject FLT_MIN in denominator to avoid division by zero
-    qfp_t a = _QFOC_MIN(abs_x, abs_y) / (_QFOC_MAX(abs_x, abs_y) + 1.17549e-38);
+    qfp_t a = _min(abs_x, abs_y) / (_max(abs_x, abs_y) + 1.17549e-38);
     // s := a * a
     qfp_t s = a * a;
     // r := ((-0.0464964749 * s + 0.15931422) * s - 0.327622764) * s * a + a
@@ -428,7 +439,7 @@ int qfoc_i_update(QFoc *foc, qfp_t ia, qfp_t ib, qfp_t ic)
     foc->ib = ib;
     foc->ic = ic;
 
-    if((_QFOC_ABS(ia) > foc->iphase_max) || (_QFOC_ABS(ib) > foc->iphase_max) || (_QFOC_ABS(ic) > foc->iphase_max)) {
+    if((_abs(ia) > foc->iphase_max) || (_abs(ib) > foc->iphase_max) || (_abs(ic) > foc->iphase_max)) {
         foc->status = QFOC_STATUS_ERROR;
         foc->err = QFOC_ERR_OIMAX;
         return -1;
@@ -628,6 +639,22 @@ int qfoc_iloop_calc(QFoc *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
     return 0;
 }
 
+static inline qfp_t _diff_limit(qfp_t prev, qfp_t ref, qfp_t dmax)
+{
+    qfp_t diff = ref - prev;
+    if(dmax != QFOC_NO_LIMIT) {
+        if(diff > dmax) {
+            return prev + dmax;
+        } else if(diff < -dmax) {
+            return prev - dmax;
+        } else {
+            return ref;
+        }
+    } else {
+        return ref;
+    }
+}
+
 /* FOC velocity/position current double loop pid control */
 int qfoc_vloop_update(QFoc *foc, qfp_t dmax)
 {
@@ -635,19 +662,10 @@ int qfoc_vloop_update(QFoc *foc, qfp_t dmax)
         return -1;
     }
     qfp_t iref = foc->vloop_controller(foc);
-    qfp_t di = iref - foc->iq;
-    if(dmax != 0) {
-        if(di > dmax) {
-            foc->iqref += dmax;
-        } else if(di < -dmax) {
-            foc->iqref -= dmax;
-        } else {
-            foc->iqref = iref;
-        }
-    } else {
-        foc->iqref = iref;
-        foc->idref = 0;
-    }
+
+    foc->iqref = _diff_limit(foc->iqref, iref, dmax);
+    foc->idref = 0;
+    
     return 0;
 }
 
@@ -657,19 +675,10 @@ int qfoc_ovloop_update(QFoc *foc, qfp_t dmax)
         return -1;
     }
     qfp_t vref = foc->vloop_controller(foc);
-    qfp_t dv = vref - foc->vq;
-    if(dmax != QFOC_NO_LIMIT) {
-        if(dv > dmax) {
-            foc->vq += dmax;
-        } else if(dv < -dmax) {
-            foc->vq -= dmax;
-        } else {
-            foc->vq = vref;
-        }
-    } else {
-        foc->vq = vref;
-        foc->vd = 0;
-    }
+
+    foc->vq = _diff_limit(foc->vq, vref, dmax);
+    foc->vd = 0;
+
     return 0;
 }
 
@@ -679,19 +688,10 @@ int qfoc_ploop_update(QFoc *foc, qfp_t dmax)
         return -1;
     }
     qfp_t ref = foc->ploop_controller(foc);
-    qfp_t di = ref - foc->iq;
-    if(dmax != QFOC_NO_LIMIT) {
-        if(di > dmax) {
-            foc->iqref += dmax;
-        } else if(di < -dmax) {
-            foc->iqref -= dmax;
-        } else {
-            foc->iqref = ref;
-        }
-    } else {
-        foc->iqref = ref;
-        foc->idref = 0;
-    }
+
+    foc->iqref = _diff_limit(foc->iqref, ref, dmax);
+    foc->idref = 0;
+
     return 0;
 }
 
@@ -701,19 +701,10 @@ int qfoc_oploop_update(QFoc *foc, qfp_t dmax)
         return -1;
     }
     qfp_t ref = foc->ploop_controller(foc);
-    qfp_t dv = ref - foc->vq;
-    if(dmax != QFOC_NO_LIMIT) {
-        if(dv > dmax) {
-            foc->vq += dmax;
-        } else if(dv < -dmax) {
-            foc->vq -= dmax;
-        } else {
-            foc->vq = ref;
-        }
-    } else {
-        foc->vq = ref;
-        foc->vd = 0;
-    }
+
+    foc->vq = _diff_limit(foc->vq, ref, dmax);
+    foc->vd = 0;
+
     return 0;
 }
 
@@ -723,18 +714,9 @@ int qfoc_vploop_update(QFoc *foc, qfp_t dmax)
         return -1;
     }
     qfp_t ref = foc->ploop_controller(foc);
-    qfp_t dv = ref - foc->vel;
-    if(dmax != QFOC_NO_LIMIT) {
-        if(dv > dmax) {
-            foc->vref += dmax;
-        } else if(dv < -dmax) {
-            foc->vref -= dmax;
-        } else {
-            foc->vref = ref;
-        }
-    } else {
-        foc->vref = ref;
-    }
+
+    foc->vref = _diff_limit(foc->vref, ref, dmax);
+
     return 0;
 }
 
