@@ -2,7 +2,7 @@
  * @Author: luoqi
  * @Date: 2021-04-27 19:20:38
  * @ Modified by: luoqi
- * @ Modified time: 2025-02-11 00:10
+ * @ Modified time: 2025-02-25 11:42
  */
 
 #include "pid.h"
@@ -83,7 +83,7 @@ int pid_int_sep_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t alpha, qfp
         return -1;
     }
     pid_init(pid, kp, ki, kd, olimit);
-    if(pid->alpha < 0 || pid->alpha > 1) {
+    if(alpha < 0 || alpha > 1) {
         pid->alpha = 1;
         return -1;
     }
@@ -214,7 +214,7 @@ int pid_diff_first_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t alpha, 
     }
     
     pid_init(pid, kp, ki, kd, olimit);
-    if(pid->alpha < 0 || pid->alpha > 1) {
+    if(alpha < 0 || alpha > 1) {
         pid->alpha = 0;
         return -1;
     }
