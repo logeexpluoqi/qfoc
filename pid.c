@@ -2,7 +2,7 @@
  * @Author: luoqi
  * @Date: 2021-04-27 19:20:38
  * @ Modified by: luoqi
- * @ Modified time: 2025-02-25 11:42
+ * @ Modified time: 2025-02-28 22:58
  */
 
 #include "pid.h"
@@ -14,6 +14,9 @@ static inline qfp_t _abs(qfp_t x)
 
 static inline qfp_t update_pid_output(PidObj *pid)
 {
+    if(!pid) {
+        return 0;
+    }
     if(pid->olimit != PID_NONE) {
         if(pid->yk > pid->olimit) {
             pid->yk = pid->olimit;
@@ -23,6 +26,17 @@ static inline qfp_t update_pid_output(PidObj *pid)
     }
     pid->yk1 = pid->yk;
     return pid->yk;
+}
+
+static inline qfp_t _int_ratio_calc(qfp_t err, qfp_t lth, qfp_t hth)
+{
+    qfp_t abs_err = _abs(err);
+    if(abs_err <= lth) {
+        return 1;
+    } else if(abs_err > hth) {
+        return 0;
+    }
+    return (hth - abs_err) / (hth - lth);
 }
 
 int pid_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t olimit)
@@ -83,7 +97,7 @@ int pid_int_sep_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t alpha, qfp
         return -1;
     }
     pid_init(pid, kp, ki, kd, olimit);
-    if(alpha < 0 || alpha > 1) {
+    if(pid->alpha < 0 || pid->alpha > 1) {
         pid->alpha = 1;
         return -1;
     }
@@ -188,13 +202,7 @@ qfp_t pid_int_var_calc(PidObj *pid, qfp_t err, qfp_t dt)
         edk = err - pid->ek1;
     }
 
-    if(_abs(err) <= pid->lth) {
-        ratio = 1;
-    } else if(_abs(err) > pid->hth) {
-        ratio = 0;
-    } else { // lth < |e| < hth
-        ratio = (pid->hth - _abs(err)) / (pid->hth - pid->lth);
-    }
+    ratio = _int_ratio_calc(err, pid->lth, pid->hth);
 
     pid->delta_k = pid->kp * (err - pid->ek1)
         + ratio * pid->ki * err
@@ -214,7 +222,7 @@ int pid_diff_first_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t alpha, 
     }
     
     pid_init(pid, kp, ki, kd, olimit);
-    if(alpha < 0 || alpha > 1) {
+    if(pid->alpha < 0 || pid->alpha > 1) {
         pid->alpha = 0;
         return -1;
     }
@@ -276,15 +284,7 @@ qfp_t pid_incplt_diff_int_var_calc(PidObj *pid, qfp_t err, qfp_t dt)
     } else {
         edk = err - pid->ek1;
     }
-    qfp_t ratio = 0;
-
-    if(_abs(err) <= pid->lth) {
-        ratio = 1;
-    } else if(_abs(err) > pid->hth) {
-        ratio = 0;
-    } else { // lth < |e| < hth
-        ratio = (pid->hth - _abs(err)) / (pid->hth - pid->lth);
-    }
+    qfp_t ratio = _int_ratio_calc(err, pid->lth, pid->hth);
 
     pid->delta_k = pid->kp * (err - pid->ek1)
         + ratio * pid->ki * err
@@ -326,15 +326,7 @@ qfp_t pid_diff_first_int_var_calc(PidObj *pid, qfp_t err, qfp_t dt)
     }
 
     qfp_t eyk = pid->delta_k;
-    qfp_t ratio = 0;
-
-    if(_abs(err) <= pid->lth) {
-        ratio = 1;
-    } else if(_abs(err) > pid->hth) {
-        ratio = 0;
-    } else { // lth < |e| < hth
-        ratio = (pid->hth - _abs(err)) / (pid->hth - pid->lth);
-    }
+    qfp_t ratio = _int_ratio_calc(err, pid->lth, pid->hth);
 
     pid->delta_k = pid->kp * (err - pid->ek1)
         + ratio * pid->ki * err
