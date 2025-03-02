@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2025-02-24 17:09
+ * @ Modified time: 2025-03-02 22:57
  * @ Description:
  */
 
@@ -38,7 +38,20 @@ static inline qfp_t _deg2rpm(qfp_t deg)
 
 static inline qfp_t _fmodf(qfp_t x, qfp_t y)
 {
-    return (x - ((int)(x / y)) * y);
+    if(y == 0) {
+        return NAN;
+    }
+
+    qfp_t abs_y = y < 0 ? -y : y;
+    qfp_t sign_x = x < 0 ? -1 : 1;
+    qfp_t abs_x = x < 0 ? -x : x;
+
+    qfp_t div = abs_x / abs_y;
+    qfp_t int_part = div >= 0 ? (qfp_t)((int)div) : -(qfp_t)((int)-div);
+
+    qfp_t result = abs_x - (int_part * abs_y);
+
+    return sign_x * result;
 }
 
 // static const qfp_t _QFOC_PI                = 3.141592653589793f;

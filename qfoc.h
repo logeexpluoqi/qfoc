@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2025-02-17 20:43
+ * @ Modified time: 2025-03-02 22:58
  * @ Description:
  */
 
@@ -22,6 +22,10 @@ typedef float qfp_t;
 
 #ifndef QNULL
 #define QNULL ((void *)0)
+#endif
+
+#ifndef NAN
+#define NAN (0.0f / 0.0f)
 #endif
 
 typedef struct {
