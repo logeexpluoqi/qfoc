@@ -69,19 +69,20 @@ typedef enum {
  * @brief: Enum defining possible errors in the FOC system.
  */
 typedef enum {
-    QFOC_ERR_NONE = 0,            // No error
-    QFOC_ERR_IMAX_NOT_SET,        // Maximum current limit not set
-    QFOC_ERR_OIMAX,               // Over current limit error
-    QFOC_ERR_OVMAX,               // Over velocity limit error
-    QFOC_ERR_OPMAX,               // Over position max limit error
-    QFOC_ERR_OPMIN,               // Over position min limit error
-    QFOC_ERR_OVBUS,               // Over vbus limit error
-    QFOC_ERR_OPWR,                // Over power limit error
-    QFOC_ERR_MOTOR_PARAM,         // Motor parameter error
-    QFOC_ERR_OITRACK,             // Over current tracking limit error
-    QFOC_ERR_OVTRACK,             // Over velocity tracking limit error
-    QFOC_ERR_OPTRACK,             // Over position tracking limit error
-    QFOC_ERR_PHASE,               // Phase error
+    QFOC_ERR_NONE = 0,                  // No error
+    QFOC_ERR_OBJ_NOT_FOUND = -1,        // FOC objects not found
+    QFOC_ERR_IMAX_NOT_SET = -2,         // Maximum current limit not set
+    QFOC_ERR_OIMAX = -3,                // Over current limit error
+    QFOC_ERR_OVMAX = -4,                // Over velocity limit error
+    QFOC_ERR_OPMAX = -5,                // Over position max limit error
+    QFOC_ERR_OPMIN = -6,                // Over position min limit error
+    QFOC_ERR_OVBUS = -7,                // Over vbus limit error
+    QFOC_ERR_OPWR = -8,                 // Over power limit error
+    QFOC_ERR_MOTOR_PARAM = -9,          // Motor parameter error
+    QFOC_ERR_OITRACK = -10,             // Over current tracking limit error
+    QFOC_ERR_OVTRACK = -11,             // Over velocity tracking limit error
+    QFOC_ERR_OPTRACK = -12,             // Over position tracking limit error
+    QFOC_ERR_PHASE = -13,               // Phase error
 } QFocError;
 
 /**
