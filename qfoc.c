@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2025-03-05 23:25
+ * @ Modified time: 2025-03-06 11:44
  * @ Description:
  */
 
@@ -15,30 +15,30 @@ static inline  qfp_t _clamp(qfp_t val, qfp_t min, qfp_t max)
 
 static void *_memset(void *dest, int c, uint32_t n)
 {
-    if (!dest) {
+    if(!dest) {
         return QNULL;
     }
 
-    if (n == 0) {
+    if(n == 0) {
         return dest;
     }
 
     uint8_t *pdest = (uint8_t *)dest;
     uint8_t value = (uint8_t)c;
 
-    if (n >= 4 && ((uintptr_t)pdest & 3) == 0) {
+    if(n >= 4 && ((uintptr_t)pdest & 3) == 0) {
         uint32_t fill = value | (value << 8) | (value << 16) | (value << 24);
         uint32_t *pdest32 = (uint32_t *)pdest;
-        
-        while (n >= 4) {
+
+        while(n >= 4) {
             *pdest32++ = fill;
             n -= 4;
         }
-        
+
         pdest = (uint8_t *)pdest32;
     }
 
-    while (n--) {
+    while(n--) {
         *pdest++ = value;
     }
 
@@ -164,7 +164,7 @@ static qfp_t _fsin(qfp_t deg)
 
     // Calculate the lookup table index and interpolation factor
     int index = (int)deg;  // 1° resolution
-    if(index >= 90){
+    if(index >= 90) {
         return sign * _fast_sin_table[90];
     }
     qfp_t fraction = deg - index;
@@ -399,7 +399,7 @@ int qfoc_init(QFocObj *foc, PmsmMotor *motor, uint16_t pwm_max, qfp_t vbus_max, 
     return ret;
 }
 
-int qfoc_iloop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocObj *foc, QFocParams *output))
+int qfoc_iloop_controller_set(QFocObj *foc, QFocError(*controller)(const QFocObj *foc, QFocOutput *output))
 {
     if(!foc || !controller) {
         return -1;
@@ -409,7 +409,7 @@ int qfoc_iloop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocOb
     return 0;
 }
 
-int qfoc_ploop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocObj *foc, QFocParams *output))
+int qfoc_ploop_controller_set(QFocObj *foc, QFocError(*controller)(const QFocObj *foc, QFocOutput *output))
 {
     if(!foc || !controller) {
         return -1;
@@ -418,7 +418,7 @@ int qfoc_ploop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocOb
     return 0;
 }
 
-int qfoc_vloop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocObj *foc, QFocParams *output))
+int qfoc_vloop_controller_set(QFocObj *foc, QFocError(*controller)(const QFocObj *foc, QFocOutput *output))
 {
     if(!foc || !controller) {
         return -1;
@@ -658,9 +658,9 @@ int qfoc_iloop_update(QFocObj *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pw
         *pwmc = 0;
         return -1;
     }
-    QFocParams output = { 0 };
+    QFocOutput output = { 0 };
     QFocError err = foc->iloop_controller(foc, &output);
-    
+
     if(err != QFOC_ERR_NONE) {
         foc->status = QFOC_STATUS_ERROR;
         foc->err = err;
@@ -687,13 +687,19 @@ int qfoc_vloop_update(QFocObj *foc)
     if(!foc) {
         return -1;
     }
-    QFocParams output = { 0 };
+    QFocOutput output = { 0 };
     foc->err = foc->vloop_controller(foc, &output);
-    
-    foc->iqref = output.iqref;
-    foc->idref = output.idref;
-    foc->vq = output.vq;
-    foc->vd  = output.vd;
+
+    if(output.to == QFOC_OUT_TO_ILOOP) {
+        foc->iqref = output.iqref;
+        foc->idref = output.idref;
+    } else if(output.to == QFOC_OUT_TO_OLOOP) {
+        foc->vq = output.vq;
+        foc->vd = output.vd;
+    } else {
+        return QFOC_ERR_LOOP_OUTPUT;
+    }
+
     return 0;
 }
 
@@ -702,13 +708,20 @@ int qfoc_ploop_update(QFocObj *foc)
     if(!foc) {
         return -1;
     }
-    QFocParams output = { 0 };
+    QFocOutput output = { 0 };
     foc->err = foc->ploop_controller(foc, &output);
-    
-    foc->pref = output.pref;
-    foc->vref = output.vref;
-    foc->vq = output.vq;
-    foc->vd  = output.vd;
+
+    if(output.to == QFOC_OUT_TO_VLOOP) {
+        foc->vref = output.vref;
+    } else if(output.to == QFOC_OUT_TO_ILOOP) {
+        foc->iqref = output.iqref;
+        foc->idref = output.idref;
+    } else if(output.to == QFOC_OUT_TO_OLOOP) {
+        foc->vq = output.vq;
+        foc->vd = output.vd;
+    } else {
+        return QFOC_ERR_LOOP_OUTPUT;
+    }
     return 0;
 }
 

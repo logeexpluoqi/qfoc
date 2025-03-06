@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2025-03-05 23:18
+ * @ Modified time: 2025-03-06 11:43
  * @ Description:
  */
 
@@ -83,19 +83,34 @@ typedef enum {
     QFOC_ERR_OVTRACK = -11,             // Over velocity tracking limit error
     QFOC_ERR_OPTRACK = -12,             // Over position tracking limit error
     QFOC_ERR_PHASE = -13,               // Phase error
+    QFOC_ERR_LOOP_OUTPUT = -14,         // Loop output error
 } QFocError;
 
 /**
- * @brief: Structure defining the parameters used in FOC control loops.
+ * @brief: Enum defining the output target for FOC calculations
+ * Used to determine the next processing stage in the FOC control chain
+ */
+typedef enum {
+    QFOC_OUT_TO_NONE = 0, // No output
+    QFOC_OUT_TO_OLOOP,    // Output to open loop update stage
+    QFOC_OUT_TO_ILOOP,    // Output to i loop control stage
+    QFOC_OUT_TO_VLOOP,    // Output to v loop control stage
+} QFocOutputTo;
+
+/**
+ * @brief: Structure holding FOC control loop parameters and references
+ * Contains all the necessary reference values and intermediate results
+ * for FOC control calculations across different control loops
  */
 typedef struct {
-    qfp_t iqref;                  // Reference current for q-axis in Amperes
-    qfp_t idref;                  // Reference current for d-axis in Amperes
-    qfp_t vref;                   // Reference velocity in degrees/second
-    qfp_t pref;                   // Reference position in degrees
-    qfp_t vq;                     // Voltage for q-axis in Volts
-    qfp_t vd;                     // Voltage for d-axis in Volts
-} QFocParams;
+    qfp_t iqref;          // Reference current for q-axis in Amperes
+    qfp_t idref;          // Reference current for d-axis in Amperes
+    qfp_t vref;           // Reference velocity in degrees/second
+    qfp_t pref;           // Reference position in degrees
+    qfp_t vq;             // Calculated voltage for q-axis in Volts
+    qfp_t vd;             // Calculated voltage for d-axis in Volts
+    QFocOutputTo to;      // Specifies the next processing stage in control chain
+} QFocOutput;
 
 /**
  * @brief: Main structure representing the FOC object.
@@ -141,9 +156,9 @@ typedef struct _qfoc {
     uint32_t i2t_cnt;             // Integral counter
     PmsmMotor *motor;             // Pointer to the motor object
 
-    QFocError (*iloop_controller)(const struct _qfoc *foc, QFocParams *output); // Current loop controller
-    QFocError (*ploop_controller)(const struct _qfoc *foc, QFocParams *output); // Position loop controller
-    QFocError (*vloop_controller)(const struct _qfoc *foc, QFocParams *output); // Velocity loop controller
+    QFocError (*iloop_controller)(const struct _qfoc *foc, QFocOutput *output); // Current loop controller
+    QFocError (*ploop_controller)(const struct _qfoc *foc, QFocOutput *output); // Position loop controller
+    QFocError (*vloop_controller)(const struct _qfoc *foc, QFocOutput *output); // Velocity loop controller
 } QFocObj;
 
 #define QFOC_NO_LIMIT   0
@@ -174,7 +189,7 @@ int qfoc_init(QFocObj *foc, PmsmMotor *motor, uint16_t pwm_max, qfp_t vbus_max, 
  *                   The controller should calculate target iq and id values based on the FOC parameters.
  * @return 0 on success, error code otherwise.
  */
-int qfoc_iloop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocObj *foc, QFocParams *output));
+int qfoc_iloop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocObj *foc, QFocOutput *output));
 
 /**
  * @brief: Sets the position loop controller for FOC.
@@ -184,7 +199,7 @@ int qfoc_iloop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocOb
  * @param controller: Function pointer to the user-defined position loop controller.
  * @return: 0 on success, error code otherwise.
  */
-int qfoc_ploop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocObj *foc, QFocParams *output));
+int qfoc_ploop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocObj *foc, QFocOutput *output));
 
 /**
  * @brief: Sets the velocity loop controller for FOC.
@@ -194,7 +209,7 @@ int qfoc_ploop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocOb
  * @param controller: Function pointer to the user-defined velocity loop controller.
  * @return: 0 on success, error code otherwise.
  */
-int qfoc_vloop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocObj *foc, QFocParams *output));
+int qfoc_vloop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocObj *foc, QFocOutput *output));
 
 /**
  * @brief: Enables or disables the FOC system.
