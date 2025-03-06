@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2025-03-06 11:44
+ * @ Modified time: 2025-03-06 15:48
  * @ Description:
  */
 
@@ -649,7 +649,7 @@ int qfoc_iloop_update(QFocObj *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pw
         *pwma = 0;
         *pwmb = 0;
         *pwmc = 0;
-        return -1;
+        return 0;
     }
     if(foc->err != QFOC_ERR_NONE) {
         foc->status = QFOC_STATUS_ERROR;
@@ -688,7 +688,12 @@ int qfoc_vloop_update(QFocObj *foc)
         return -1;
     }
     QFocOutput output = { 0 };
-    foc->err = foc->vloop_controller(foc, &output);
+    QFocError err = foc->vloop_controller(foc, &output);
+    if(err != QFOC_ERR_NONE) {
+        foc->status = QFOC_STATUS_ERROR;
+        foc->err = err;
+        return -1;
+    }
 
     if(output.to == QFOC_OUT_TO_ILOOP) {
         foc->iqref = output.iqref;
@@ -697,7 +702,9 @@ int qfoc_vloop_update(QFocObj *foc)
         foc->vq = output.vq;
         foc->vd = output.vd;
     } else {
-        return QFOC_ERR_LOOP_OUTPUT;
+        foc->status = QFOC_STATUS_ERROR;
+        foc->err = QFOC_ERR_LOOP_OUTPUT;
+        return -1;
     }
 
     return 0;
@@ -709,7 +716,13 @@ int qfoc_ploop_update(QFocObj *foc)
         return -1;
     }
     QFocOutput output = { 0 };
-    foc->err = foc->ploop_controller(foc, &output);
+    QFocError err = foc->ploop_controller(foc, &output);
+
+    if(err != QFOC_ERR_NONE) {
+        foc->status = QFOC_STATUS_ERROR;
+        foc->err = err;
+        return -1;
+    }
 
     if(output.to == QFOC_OUT_TO_VLOOP) {
         foc->vref = output.vref;
@@ -720,7 +733,9 @@ int qfoc_ploop_update(QFocObj *foc)
         foc->vq = output.vq;
         foc->vd = output.vd;
     } else {
-        return QFOC_ERR_LOOP_OUTPUT;
+        foc->status = QFOC_STATUS_ERROR;
+        foc->err = QFOC_ERR_LOOP_OUTPUT;
+        return -1;
     }
     return 0;
 }
