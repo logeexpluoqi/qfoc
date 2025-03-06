@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2025-03-06 11:43
+ * @ Modified time: 2025-03-06 17:02
  * @ Description:
  */
 
@@ -187,7 +187,7 @@ int qfoc_init(QFocObj *foc, PmsmMotor *motor, uint16_t pwm_max, qfp_t vbus_max, 
  * @param foc Pointer to the FOC object.
  * @param controller Function pointer to the user-defined current loop controller.
  *                   The controller should calculate target iq and id values based on the FOC parameters.
- * @return 0 on success, error code otherwise.
+ * @return 0 on success, -1 on failed.
  */
 int qfoc_iloop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocObj *foc, QFocOutput *output));
 
@@ -197,7 +197,7 @@ int qfoc_iloop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocOb
  * The registered controller will be automatically called during the FOC loop calculations.
  * @param foc: Pointer to the FOC object.
  * @param controller: Function pointer to the user-defined position loop controller.
- * @return: 0 on success, error code otherwise.
+ * @return: 0 on success, -1 on failed.
  */
 int qfoc_ploop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocObj *foc, QFocOutput *output));
 
@@ -207,7 +207,7 @@ int qfoc_ploop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocOb
  * The registered controller will be automatically called during the FOC loop calculations.
  * @param foc: Pointer to the FOC object.
  * @param controller: Function pointer to the user-defined velocity loop controller.
- * @return: 0 on success, error code otherwise.
+ * @return: 0 on success, -1 on failed.
  */
 int qfoc_vloop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocObj *foc, QFocOutput *output));
 
@@ -215,7 +215,7 @@ int qfoc_vloop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocOb
  * @brief: Enables or disables the FOC system.
  * @param foc: Pointer to the FOC object.
  * @param ena: Enable state (QFOC_ENABLE or QFOC_DISABLE).
- * @return: 0 on success, error code otherwise.
+ * @return: 0 on success, -1 on failed.
  */
 int qfoc_enable(QFocObj *foc, QFocEnable ena);
 
@@ -223,7 +223,7 @@ int qfoc_enable(QFocObj *foc, QFocEnable ena);
  * @brief: Updates the FOC system with the latest vbus voltage value.
  * @param foc: Pointer to the FOC object.
  * @param vbus: Latest vbus voltage value.
- * @return: 0 on success, error code otherwise.
+ * @return: 0 on success, -1 on failed.
  */
 int qfoc_vbus_set(QFocObj *foc, qfp_t vbus);
 
@@ -233,7 +233,7 @@ int qfoc_vbus_set(QFocObj *foc, qfp_t vbus);
  * @param ia: Phase A current.
  * @param ib: Phase B current.
  * @param ic: Phase C current.
- * @return: 0 on success, error code otherwise.
+ * @return: 0 on success, -1 on failed.
  */
 int qfoc_i_set(QFocObj *foc, qfp_t ia, qfp_t ib, qfp_t ic);
 
@@ -241,7 +241,7 @@ int qfoc_i_set(QFocObj *foc, qfp_t ia, qfp_t ib, qfp_t ic);
  * @brief: Updates the FOC system with the latest velocity value.
  * @param foc: Pointer to the FOC object.
  * @param vel: Latest velocity value.
- * @return: 0 on success, error code otherwise.
+ * @return: 0 on success, -1 on failed.
  */
 int qfoc_v_set(QFocObj *foc, qfp_t vel);
 
@@ -249,7 +249,7 @@ int qfoc_v_set(QFocObj *foc, qfp_t vel);
  * @brief: Updates the FOC system with the latest encoder position.
  * @param foc: Pointer to the FOC object.
  * @param epos: Latest encoder position.
- * @return: 0 on success, error code otherwise.
+ * @return: 0 on success, -1 on failed.
  */
 int qfoc_epos_set(QFocObj *foc, qfp_t epos);
 
@@ -258,7 +258,7 @@ int qfoc_epos_set(QFocObj *foc, qfp_t epos);
  * @param foc: Pointer to the FOC object.
  * @param vq: Target voltage for the q-axis.
  * @param vd: Target voltage for the d-axis.
- * @return: 0 on success, error code otherwise.
+ * @return: 0 on success, -1 on failed.
  */
 int qfoc_vqd_set(QFocObj *foc, qfp_t vq, qfp_t vd);
 
@@ -267,7 +267,7 @@ int qfoc_vqd_set(QFocObj *foc, qfp_t vq, qfp_t vd);
  * @param foc: Pointer to the FOC object.
  * @param iqref: Reference current for the q-axis.
  * @param idref: Reference current for the d-axis.
- * @return: 0 on success, error code otherwise.
+ * @return: 0 on success, -1 on failed.
  */
 int qfoc_iref_set(QFocObj *foc, qfp_t iqref, qfp_t idref);
 
@@ -275,7 +275,7 @@ int qfoc_iref_set(QFocObj *foc, qfp_t iqref, qfp_t idref);
  * @brief: Sets the reference velocity for the FOC system.
  * @param foc: Pointer to the FOC object.
  * @param vref: Reference velocity.
- * @return: 0 on success, error code otherwise.
+ * @return: 0 on success, -1 on failed.
  */
 int qfoc_vref_set(QFocObj *foc, qfp_t vref);
 
@@ -283,7 +283,7 @@ int qfoc_vref_set(QFocObj *foc, qfp_t vref);
  * @brief: Sets the reference position for the FOC system.
  * @param foc: Pointer to the FOC object.
  * @param pref: Reference position.
- * @return: 0 on success, error code otherwise.
+ * @return: 0 on success, -1 on failed.
  */
 int qfoc_pref_set(QFocObj *foc, qfp_t pref);
 
@@ -297,7 +297,7 @@ int qfoc_pref_set(QFocObj *foc, qfp_t pref);
  * @param pwma: Pointer to store PWM output for phase A.
  * @param pwmb: Pointer to store PWM output for phase B.
  * @param pwmc: Pointer to store PWM output for phase C.
- * @return: 0 on success, error code otherwise.
+ * @return: 0 on success, -1 on failed.
  */
 int qfoc_force_calc(qfp_t vbus, qfp_t vq, qfp_t vd, qfp_t edegree, uint16_t pwm_max, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
 
@@ -307,7 +307,7 @@ int qfoc_force_calc(qfp_t vbus, qfp_t vq, qfp_t vd, qfp_t edegree, uint16_t pwm_
  * @param pwma: Pointer to store PWM output for phase A.
  * @param pwmb: Pointer to store PWM output for phase B.
  * @param pwmc: Pointer to store PWM output for phase C.
- * @return: 0 on success, error code otherwise.
+ * @return: 0 on success, -1 on failed.
  */
 int qfoc_oloop_update(QFocObj *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
 
@@ -317,21 +317,21 @@ int qfoc_oloop_update(QFocObj *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pw
  * @param pwma: Pointer to store PWM output for phase A.
  * @param pwmb: Pointer to store PWM output for phase B.
  * @param pwmc: Pointer to store PWM output for phase C.
- * @return: 0 on success, error code otherwise.
+ * @return: 0 on success, -1 on failed.
  */
 int qfoc_iloop_update(QFocObj *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
 
 /**
  * @brief: Updates the FOC system in velocity loop mode.
  * @param foc: Pointer to the FOC object.
- * @return: 0 on success, error code otherwise.
+ * @return: 0 on success, -1 on failed.
  */
 int qfoc_vloop_update(QFocObj *foc);
 
 /**
  * @brief: Updates the FOC system in position loop mode.
  * @param foc: Pointer to the FOC object.
- * @return: 0 on success, error code otherwise.
+ * @return: 0 on success, -1 on failed.
  */
 int qfoc_ploop_update(QFocObj *foc);
 
@@ -345,7 +345,7 @@ int qfoc_ploop_update(QFocObj *foc);
  * @param pwma: Pointer to store PWM output for phase A.
  * @param pwmb: Pointer to store PWM output for phase B.
  * @param pwmc: Pointer to store PWM output for phase C.
- * @return: 0 on success, error code otherwise.
+ * @return: 0 on success, -1 on failed.
  */
 int qfoc_calib_calc(QFocObj *foc, qfp_t vdmax, qfp_t pref, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc);
 
