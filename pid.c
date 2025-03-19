@@ -381,7 +381,7 @@ int pid_clr(PidObj *pid)
     pid->y_k = 0;
     pid->y_k1 = 0;
     pid->delta_k = 0;
-    pid->i_acc = 0;
+    pid->nlo_k1 = 0;
     pid->e_k1 = 0;
     pid->de_k1 = 0;
     pid->de_k2 = 0;
@@ -398,7 +398,7 @@ int pid_calc_clr(PidObj *pid)
 
     pid->delta_k = 0;
     pid->e_k1 = 0;
-    pid->i_acc = 0;
+    pid->nlo_k1 = 0;
     pid->de_k1 = 0;
     pid->de_k2 = 0;
     pid->ey_k1 = 0;
