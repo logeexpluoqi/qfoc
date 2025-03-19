@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2025-03-19 12:26
  * @ Modified by: luoqi
- * @ Modified time: 2025-03-19 14:06
+ * @ Modified time: 2025-03-19 21:11
  * @ Description:
  */
 
@@ -90,6 +90,10 @@ int notch_filter_init(NotchFilter *filter, qfp_t f0, qfp_t fs, qfp_t bw)
     filter->b1 = -2 * cos_w0;
     filter->b2 = 1;
 
+    filter->fs = fs;
+    filter->f0 = f0;
+    filter->bw = bw;
+
     filter->x1 = 0;
     filter->x2 = 0;
     filter->y1 = 0;
@@ -109,4 +113,61 @@ qfp_t notch_filter_calc(NotchFilter *filter, qfp_t x)
     filter->y2 = filter->y1;
     filter->y1 = y;
     return y;
+}
+
+int notch_filter_clr(NotchFilter *filter)
+{
+    if(!filter) {
+        return -1;
+    }
+    filter->x1 = 0;
+    filter->x2 = 0;
+    filter->y1 = 0;
+    filter->y2 = 0;
+    return 0;
+}
+
+int notch_filter_fs_set(NotchFilter *filter, qfp_t fs)
+{
+    if(!filter || (fs <= 0)) {
+        return -1;
+    }
+    filter->fs = fs;
+    qfp_t r = 1 - 3 * filter->bw / fs;
+    qfp_t cos_w0 = _fcos(2 * M_PI * filter->f0 / fs);
+    filter->a1 = -2 * cos_w0 * r;
+    filter->a2 = r * r;
+    filter->b1 = -2 * cos_w0;
+    filter->b2 = 1;
+    return 0;
+}
+
+int notch_filter_bw_set(NotchFilter *filter, qfp_t bw)
+{
+    if(!filter || (bw <= 0) || (bw >= filter->fs / 2)) {
+        return -1;
+    }
+    filter->bw = bw;
+    qfp_t r = 1 - 3 * bw / filter->fs;
+    qfp_t cos_w0 = _fcos(2 * M_PI * filter->f0 / filter->fs);
+    filter->a1 = -2 * cos_w0 * r;
+    filter->a2 = r * r;
+    filter->b1 = -2 * cos_w0;
+    filter->b2 = 1;
+    return 0;
+}
+
+int notch_filter_f0_set(NotchFilter *filter, qfp_t f0)
+{
+    if(!filter || (f0 <= 0) || (f0 >= filter->fs / 2)) {
+        return -1;
+    }
+    filter->f0 = f0;
+    qfp_t r = 1 - 3 * filter->bw / filter->fs;
+    qfp_t cos_w0 = _fcos(2 * M_PI * f0 / filter->fs);
+    filter->a1 = -2 * cos_w0 * r;
+    filter->a2 = r * r;
+    filter->b1 = -2 * cos_w0;
+    filter->b2 = 1;
+    return 0;
 }
