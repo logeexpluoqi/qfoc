@@ -110,9 +110,9 @@ qfp_t pid_aw_calc(PidObj *pid, qfp_t err, qfp_t dt)
 
     // Correct the integrator using reverse calculation: correction term = kaw * (sat - unsat)
     if(dt != PID_NONE) {
-        pid->i_acc += (pid->ki * err + pid->kaw * (sat - unsat)) * dt; // Integral accumulator update with anti-windup
+        pid->i_acc += (pid->ki * err - pid->kaw * (sat - unsat)) * dt; // Integral accumulator update with anti-windup
     } else {
-        pid->i_acc += pid->ki * err + pid->kaw * (sat - unsat); // Integral accumulator update with anti-windup
+        pid->i_acc += pid->ki * err - pid->kaw * (sat - unsat); // Integral accumulator update with anti-windup
     }
 
     // Update control quantity and state
