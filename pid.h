@@ -25,6 +25,7 @@ typedef struct pid_structure
     qfp_t kd;       // Derivative gain coefficient
     qfp_t kaw;      // Anti-windup gain coefficient
     qfp_t i_acc;    // Integral accumulator
+    qfp_t nlo_k1;   // No limit output at the previous time step
     qfp_t e_k1;     // Error at the previous time step
     qfp_t de_k1;    // Derivative of error at the previous time step
     qfp_t y_k;      // Current output
@@ -109,5 +110,4 @@ int pid_calc_clr(PidObj *pid);
 #ifdef __cplusplus
 }
 #endif
-
 #endif

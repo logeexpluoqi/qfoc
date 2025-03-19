@@ -2,7 +2,7 @@
  * @Author: luoqi
  * @Date: 2021-04-27 19:20:38
  * @ Modified by: luoqi
- * @ Modified time: 2025-03-12 19:36
+ * @ Modified time: 2025-03-19 22:54
  */
 
 #include "pid.h"
@@ -40,6 +40,8 @@ int pid_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp_t olimit)
     pid->ki = ki;
     pid->kd = kd;
     pid->alpha = 1;
+    pid->kaw = ki;
+    pid->nlo_k1 = 0;
     pid->olimit = olimit;
     return 0;
 }
@@ -94,34 +96,12 @@ qfp_t pid_aw_calc(PidObj *pid, qfp_t err, qfp_t dt)
     // Calculate the proportional and derivative terms
     qfp_t p_term = pid->kp * (err - pid->e_k1);             // Proportional term
     qfp_t d_term = pid->kd * (de_k - pid->de_k1);           // Derivative term
-
-    // unsat is the unsaturated output, composed of the previous output, integral accumulator, and P, D terms
-    qfp_t unsat = pid->y_k1 + p_term + pid->i_acc + d_term;
-
-    // Get the saturated output based on the set saturation limits
-    qfp_t sat = unsat;
-    if(pid->olimit != PID_NONE) {
-        if(unsat > pid->olimit) {
-            sat = pid->olimit;
-        } else if(unsat < -pid->olimit) {
-            sat = -pid->olimit;
-        }
-    }
-
-    // Correct the integrator using reverse calculation: correction term = kaw * (sat - unsat)
-    if(dt != PID_NONE) {
-        pid->i_acc += (pid->ki * err - pid->kaw * (sat - unsat)) * dt; // Integral accumulator update with anti-windup
-    } else {
-        pid->i_acc += pid->ki * err - pid->kaw * (sat - unsat); // Integral accumulator update with anti-windup
-    }
-
-    // Update control quantity and state
-    pid->delta_k = p_term + pid->i_acc + d_term;                // Total control increment
-    pid->y_k = pid->y_k1 + pid->delta_k;                        // Current output
-
-    pid->e_k1 = err;                                            // Update previous error
-    pid->de_k1 = de_k;                                          // Update previous derivative of error
-    pid->y_k1 = pid->y_k;                                       // Update previous output
+    
+    pid->delta_k = p_term + d_term + pid->ki * err - pid->kaw * (pid->nlo_k1 - pid->y_k1);
+    pid->y_k = pid->y_k1 + pid->delta_k;
+    pid->nlo_k1 = pid->y_k;
+    pid->de_k1 = de_k;
+    pid->e_k1 = err;
 
     return update_pid_output(pid);
 }
