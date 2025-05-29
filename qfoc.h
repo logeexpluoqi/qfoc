@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-08-02 10:15
  * @ Modified by: luoqi
- * @ Modified time: 2025-03-06 17:02
+ * @ Modified time: 2025-05-30 01:53
  * @ Description:
  */
 
@@ -163,6 +163,8 @@ typedef struct _qfoc {
 
 #define QFOC_NO_LIMIT   0
 
+typedef QFocError (*QFocController)(const QFocObj *foc, QFocOutput *output);
+
 /**
  * @brief: Initializes the FOC object with motor parameters and limits.
  * @param foc: Pointer to the FOC object.
@@ -189,7 +191,7 @@ int qfoc_init(QFocObj *foc, PmsmMotor *motor, uint16_t pwm_max, qfp_t vbus_max, 
  *                   The controller should calculate target iq and id values based on the FOC parameters.
  * @return 0 on success, -1 on failed.
  */
-int qfoc_iloop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocObj *foc, QFocOutput *output));
+int qfoc_iloopc_set(QFocObj *foc, QFocController controller);
 
 /**
  * @brief: Sets the position loop controller for FOC.
@@ -199,7 +201,7 @@ int qfoc_iloop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocOb
  * @param controller: Function pointer to the user-defined position loop controller.
  * @return: 0 on success, -1 on failed.
  */
-int qfoc_ploop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocObj *foc, QFocOutput *output));
+int qfoc_ploopc_set(QFocObj *foc, QFocController controller);
 
 /**
  * @brief: Sets the velocity loop controller for FOC.
@@ -209,7 +211,7 @@ int qfoc_ploop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocOb
  * @param controller: Function pointer to the user-defined velocity loop controller.
  * @return: 0 on success, -1 on failed.
  */
-int qfoc_vloop_controller_set(QFocObj *foc, QFocError (*controller)(const QFocObj *foc, QFocOutput *output));
+int qfoc_vloopc_set(QFocObj *foc, QFocController controller);
 
 /**
  * @brief: Enables or disables the FOC system.
@@ -225,7 +227,7 @@ int qfoc_enable(QFocObj *foc, QFocEnable ena);
  * @param vbus: Latest vbus voltage value.
  * @return: 0 on success, -1 on failed.
  */
-int qfoc_vbus_set(QFocObj *foc, qfp_t vbus);
+int qfoc_vbus_update(QFocObj *foc, qfp_t vbus);
 
 /**
  * @brief: Updates the FOC system with the latest phase currents.
@@ -235,7 +237,7 @@ int qfoc_vbus_set(QFocObj *foc, qfp_t vbus);
  * @param ic: Phase C current.
  * @return: 0 on success, -1 on failed.
  */
-int qfoc_i_set(QFocObj *foc, qfp_t ia, qfp_t ib, qfp_t ic);
+int qfoc_iabc_update(QFocObj *foc, qfp_t ia, qfp_t ib, qfp_t ic);
 
 /**
  * @brief: Updates the FOC system with the latest velocity value.
@@ -243,7 +245,7 @@ int qfoc_i_set(QFocObj *foc, qfp_t ia, qfp_t ib, qfp_t ic);
  * @param vel: Latest velocity value.
  * @return: 0 on success, -1 on failed.
  */
-int qfoc_v_set(QFocObj *foc, qfp_t vel);
+int qfoc_vel_update(QFocObj *foc, qfp_t vel);
 
 /**
  * @brief: Updates the FOC system with the latest encoder position.
@@ -251,7 +253,7 @@ int qfoc_v_set(QFocObj *foc, qfp_t vel);
  * @param epos: Latest encoder position.
  * @return: 0 on success, -1 on failed.
  */
-int qfoc_epos_set(QFocObj *foc, qfp_t epos);
+int qfoc_epos_update(QFocObj *foc, qfp_t epos);
 
 /**
  * @brief: Sets the target voltages for the q-axis and d-axis in the FOC system.
