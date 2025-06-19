@@ -56,3 +56,12 @@ qfp_t lpf_1st_kcalc(Lpf1stObj *filter, qfp_t uk, qfp_t fs)
     filter->y_k1 = y_k;
     return y_k;
 }
+
+int lpf_1st_reset(Lpf1stObj *filter)
+{
+    if(!filter) {
+        return -1;
+    }
+    filter->y_k1 = 0;
+    return 0;
+}

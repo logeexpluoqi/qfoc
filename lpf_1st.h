@@ -34,6 +34,8 @@ qfp_t lpf_1st_calc(Lpf1stObj *filter, qfp_t uk);
 /* ts is time-varying */
 qfp_t lpf_1st_kcalc(Lpf1stObj *filter, qfp_t uk, qfp_t ts);
 
+int lpf_1st_reset(Lpf1stObj *filter);
+
 #ifdef __cplusplus
  }
 #endif

@@ -45,3 +45,13 @@ int hpf_1st_fc_set(Hpf1stObj *filter, qfp_t fc)
     filter->alpha = 1 / (1 + 2 * M_PI * fc * filter->ts);
     return 0;
 }
+
+int hpf_1st_reset(Hpf1stObj *filter)
+{
+    if(!filter) {
+        return -1;
+    }
+    filter->y_k1 = 0;
+    filter->u_k1 = 0;
+    return 0;
+}

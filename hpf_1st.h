@@ -31,6 +31,8 @@ qfp_t hpf_1st_calcu(Hpf1stObj *filter, qfp_t u_k);
 
 int hpf_1st_fc_set(Hpf1stObj *filter, qfp_t fc);
 
+int hpf_1st_reset(Hpf1stObj *filter);
+
 #ifdef __cplusplus
  }
 #endif

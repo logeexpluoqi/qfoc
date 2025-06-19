@@ -382,7 +382,7 @@ qfp_t pid_diff_first_integ_var_calc(PidObj *pid, qfp_t err, qfp_t dt)
     return update_pid_output(pid);
 }
 
-int pid_clr(PidObj *pid)
+int pid_reset(PidObj *pid)
 {
     if(!pid) {
         return -1;
@@ -400,7 +400,7 @@ int pid_clr(PidObj *pid)
     return 0;
 }
 
-int pid_calc_clr(PidObj *pid)
+int pid_calc_reset(PidObj *pid)
 {
     if(!pid) {
         return -1;

@@ -115,7 +115,7 @@ qfp_t notch_filter_calc(NotchFilter *filter, qfp_t x)
     return y;
 }
 
-int notch_filter_clr(NotchFilter *filter)
+int notch_filter_reset(NotchFilter *filter)
 {
     if(!filter) {
         return -1;

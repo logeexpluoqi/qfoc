@@ -37,7 +37,7 @@ int notch_filter_init(NotchFilter *filter, qfp_t f0, qfp_t fs, qfp_t bw);
 
 qfp_t notch_filter_calc(NotchFilter *filter, qfp_t x);
 
-int notch_filter_clr(NotchFilter *filter);
+int notch_filter_reset(NotchFilter *filter);
 
 int notch_filter_fs_set(NotchFilter *filter, qfp_t fs);
 

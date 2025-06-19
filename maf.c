@@ -34,3 +34,16 @@ qfp_t maf_calc(LpfMaf *filter, qfp_t z)
     
     return filter->sum / (qfp_t)filter->wsize;
 }
+
+int maf_reset(LpfMaf *filter)
+{
+    if (!filter || !filter->buf || filter->wsize <= 0) {
+        return -1;
+    }
+    for (int i = 0; i < filter->wsize; i++) {
+        filter->buf[i] = 0;
+    }
+    filter->sum = 0;
+    filter->head = 0;
+    return 0;
+}

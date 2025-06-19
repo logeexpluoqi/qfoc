@@ -101,10 +101,10 @@ int pid_diff_first_integ_var_init(PidObj *pid, qfp_t kp, qfp_t ki, qfp_t kd, qfp
 qfp_t pid_diff_first_integ_var_calc(PidObj *pid, qfp_t err, qfp_t dt);
 
 // Clear the PID controller's state
-int pid_clr(PidObj *pid);
+int pid_reset(PidObj *pid);
 
 // Clear the PID controller's state and calculate output
-int pid_calc_clr(PidObj *pid);
+int pid_calc_reset(PidObj *pid);
 
 #ifdef __cplusplus
 }

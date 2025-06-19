@@ -29,6 +29,8 @@ int maf_init(LpfMaf *filter, qfp_t *buf, int wsize);
 
 qfp_t maf_calc(LpfMaf *filter, qfp_t z);
 
+int maf_reset(LpfMaf *filter);
+
 #ifdef __cplusplus
  }
 #endif
