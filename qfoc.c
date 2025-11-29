@@ -1,12 +1,12 @@
 /**
  * Author: luoqi
- * Created Date: 2024-08-02 10:15:21
- * Last Modified: 2025-11-11 19:00:41
+ * Created Date: 2025-11-11 19:00:21
+ * Last Modified: 2025-11-30 02:16:44
  * Modified By: luoqi at <**@****>
  * Copyright (c) 2025 <*****>
  * Description:
  */
- 
+
 #include "qfoc.h"
 
 static inline  qfp_t _clamp(qfp_t val, qfp_t min, qfp_t max)
@@ -342,7 +342,7 @@ static int _svm_calc(qfp_t vbus, qfp_t vq, qfp_t vd, qfp_t edegree, qfp_t *ta, q
 
 
 
-int qfoc_init(QFocObj *foc, PmsmMotor *motor, uint32_t st, uint16_t pwm_max, qfp_t vbus_max, qfp_t cc_max, qfp_t ap_max, qfp_t imax, qfp_t vel_max, qfp_t pos_max, qfp_t pos_min)
+int qfoc_init(QFocObj *foc, PmsmMotor *motor, uint32_t samp, uint16_t pwm_max, qfp_t vbus_max, qfp_t cc_max, qfp_t ap_max, qfp_t cur_max, qfp_t vel_max, qfp_t pos_max, qfp_t pos_min)
 {
     if(!foc || !motor) {
         return -1;
@@ -382,21 +382,21 @@ int qfoc_init(QFocObj *foc, PmsmMotor *motor, uint32_t st, uint16_t pwm_max, qfp
     }
     foc->cc_max = cc_max;
     foc->ap_max = ap_max;
-    foc->st = st;
+    foc->samp = samp;
     foc->pwm_max = pwm_max;
     foc->vbus_max = vbus_max;
     foc->vel_max = vel_max;
     foc->pos_max = pos_max;
     foc->pos_min = pos_min;
-    if(imax <= 0) {
-        foc->imax = 0;
+    if(cur_max <= 0) {
+        foc->cur_max = 0;
         foc->iphase_max = 0;
         foc->status = QFOC_STATUS_ERROR;
         foc->err = QFOC_ERR_IMAX_NOT_SET;
         ret = -1;
     } else {
-        foc->imax = imax;
-        foc->iphase_max = imax;
+        foc->cur_max = cur_max;
+        foc->iphase_max = cur_max;
     }
     return ret;
 }
@@ -478,11 +478,11 @@ int qfoc_iabc_update(QFocObj *foc, qfp_t ia, qfp_t ib, qfp_t ic)
     }
 
     _clarke_transform(ia, ib, ic, &alpha, &beta);
-    foc->idc = _fsqrt(foc->iq * foc->iq + foc->id * foc->id);
+    foc->ibus = _fsqrt(foc->iq * foc->iq + foc->id * foc->id);
 
-    if(foc->scnt++ >= foc->st) {
-        foc->cc = foc->cc_int / foc->st;
-        foc->ap = foc->ap_int / foc->st;
+    if(foc->samp_cnt++ >= foc->samp) {
+        foc->cc = foc->cc_integ / foc->samp;
+        foc->ap = foc->ap_integ / foc->samp;
         if(foc->cc > foc->cc_max) {
             foc->err = QFOC_ERR_OIMAX;
         }
@@ -490,12 +490,12 @@ int qfoc_iabc_update(QFocObj *foc, qfp_t ia, qfp_t ib, qfp_t ic)
             foc->err = QFOC_ERR_OPWR;
         }
         
-        foc->scnt = 0;
-        foc->cc_int = 0;
-        foc->ap_int = 0;
+        foc->samp_cnt = 0;
+        foc->cc_integ = 0;
+        foc->ap_integ = 0;
     } else {
-        foc->ap_int += 1.5 * (foc->vq * foc->iq + foc->vd * foc->id);
-        foc->cc_int += foc->idc;
+        foc->ap_integ += 1.5 * (foc->vq * foc->iq + foc->vd * foc->id);
+        foc->cc_integ += foc->ibus;
     }
 
     _park_transform(alpha, beta, foc->edegree, &foc->iq, &foc->id);
@@ -561,8 +561,8 @@ int qfoc_iref_set(QFocObj *foc, qfp_t iqref, qfp_t idref)
     if(!foc) {
         return -1;
     }
-    foc->iqref = _clamp(iqref, -foc->imax, foc->imax);
-    foc->idref = _clamp(idref, -foc->imax, foc->imax);
+    foc->iqref = _clamp(iqref, -foc->cur_max, foc->cur_max);
+    foc->idref = _clamp(idref, -foc->cur_max, foc->cur_max);
     return 0;
 }
 
@@ -592,7 +592,7 @@ int qfoc_pref_set(QFocObj *foc, qfp_t pref)
     return 0;
 }
 
-int qfoc_force_calc(qfp_t vbus, qfp_t vq, qfp_t vd, qfp_t edegree, uint16_t pwm_max, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
+int qfoc_compel_calc(qfp_t vbus, qfp_t vq, qfp_t vd, qfp_t edegree, uint16_t pwm_max, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
 {
     qfp_t ta, tb, tc;
 
@@ -683,7 +683,7 @@ int qfoc_iloop_calc(QFocObj *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc
 }
 
 /* FOC velocity/position current double loop pid control */
-int qfoc_vloop_refresh(QFocObj *foc)
+int qfoc_vloop_update(QFocObj *foc)
 {
     if(!foc) {
         return -1;
@@ -705,7 +705,7 @@ int qfoc_vloop_refresh(QFocObj *foc)
     return 0;
 }
 
-int qfoc_ploop_refresh(QFocObj *foc)
+int qfoc_ploop_update(QFocObj *foc)
 {
     if(!foc) {
         return -1;
