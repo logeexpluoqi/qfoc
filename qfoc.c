@@ -1,7 +1,7 @@
 /**
  * Author: luoqi
  * Created Date: 2025-11-11 19:00:21
- * Last Modified: 2025-11-30 02:16:44
+ * Last Modified: 2026-01-07 17:31:23
  * Modified By: luoqi at <**@****>
  * Copyright (c) 2025 <*****>
  * Description:
@@ -342,7 +342,7 @@ static int _svm_calc(qfp_t vbus, qfp_t vq, qfp_t vd, qfp_t edegree, qfp_t *ta, q
 
 
 
-int qfoc_init(QFocObj *foc, PmsmMotor *motor, uint32_t samp, uint16_t pwm_max, qfp_t vbus_max, qfp_t cc_max, qfp_t ap_max, qfp_t cur_max, qfp_t vel_max, qfp_t pos_max, qfp_t pos_min)
+int qfoc_init(QFocObj *foc, PmsmMotor *motor, uint32_t samptime, uint16_t pwm_max, qfp_t vbus_max, qfp_t cc_max, qfp_t ap_max, qfp_t phase_cur_max, qfp_t vel_max, qfp_t pos_max, qfp_t pos_min)
 {
     if(!foc || !motor) {
         return -1;
@@ -382,21 +382,17 @@ int qfoc_init(QFocObj *foc, PmsmMotor *motor, uint32_t samp, uint16_t pwm_max, q
     }
     foc->cc_max = cc_max;
     foc->ap_max = ap_max;
-    foc->samp = samp;
+    foc->samp_time = samptime;
     foc->pwm_max = pwm_max;
     foc->vbus_max = vbus_max;
     foc->vel_max = vel_max;
     foc->pos_max = pos_max;
     foc->pos_min = pos_min;
-    if(cur_max <= 0) {
-        foc->cur_max = 0;
-        foc->iphase_max = 0;
+    if(phase_cur_max <= 0) {
+        foc->phase_cur_max = 0;
         foc->status = QFOC_STATUS_ERROR;
         foc->err = QFOC_ERR_IMAX_NOT_SET;
         ret = -1;
-    } else {
-        foc->cur_max = cur_max;
-        foc->iphase_max = cur_max;
     }
     return ret;
 }
@@ -407,7 +403,7 @@ int qfoc_ictrl_set(QFocObj *foc, QFocController controller)
         return -1;
     }
 
-    foc->iloop_ctrl = controller;
+    foc->iloopc = controller;
     return 0;
 }
 
@@ -416,7 +412,7 @@ int qfoc_pctrl_set(QFocObj *foc, QFocController controller)
     if(!foc || !controller) {
         return -1;
     }
-    foc->ploop_ctrl = controller;
+    foc->ploopc = controller;
     return 0;
 }
 
@@ -425,11 +421,22 @@ int qfoc_vctrl_set(QFocObj *foc, QFocController controller)
     if(!foc || !controller) {
         return -1;
     }
-    foc->vloop_ctrl = controller;
+    foc->vloopc = controller;
     return 0;
 }
 
-int qfoc_enable(QFocObj *foc, QFocEnable ena)
+int qfoc_controller_set(QFocObj *foc, QFocController iloop, QFocController vloop, QFocController ploop)
+{
+    if(!foc) {
+        return -1;
+    }
+    foc->iloopc = iloop;
+    foc->vloopc = vloop;
+    foc->ploopc = ploop;
+    return 0;
+}
+
+int qfoc_ena(QFocObj *foc, QFocEnable ena)
 {
     if(!foc) {
         return -1;
@@ -472,7 +479,7 @@ int qfoc_iabc_update(QFocObj *foc, qfp_t ia, qfp_t ib, qfp_t ic)
     foc->ib = ib;
     foc->ic = ic;
 
-    if((_abs(ia) > foc->iphase_max) || (_abs(ib) > foc->iphase_max) || (_abs(ic) > foc->iphase_max)) {
+    if((_abs(ia) > foc->phase_cur_max) || (_abs(ib) > foc->phase_cur_max) || (_abs(ic) > foc->phase_cur_max)) {
         foc->err = QFOC_ERR_OIMAX;
         return -1;
     }
@@ -480,9 +487,9 @@ int qfoc_iabc_update(QFocObj *foc, qfp_t ia, qfp_t ib, qfp_t ic)
     _clarke_transform(ia, ib, ic, &alpha, &beta);
     foc->ibus = _fsqrt(foc->iq * foc->iq + foc->id * foc->id);
 
-    if(foc->samp_cnt++ >= foc->samp) {
-        foc->cc = foc->cc_integ / foc->samp;
-        foc->ap = foc->ap_integ / foc->samp;
+    if(foc->samp_cnt++ >= foc->samp_time) {
+        foc->cc = foc->cc_integ / foc->samp_time;
+        foc->ap = foc->ap_integ / foc->samp_time;
         if(foc->cc > foc->cc_max) {
             foc->err = QFOC_ERR_OIMAX;
         }
@@ -561,8 +568,8 @@ int qfoc_iref_set(QFocObj *foc, qfp_t iqref, qfp_t idref)
     if(!foc) {
         return -1;
     }
-    foc->iqref = _clamp(iqref, -foc->cur_max, foc->cur_max);
-    foc->idref = _clamp(idref, -foc->cur_max, foc->cur_max);
+    foc->iqref = _clamp(iqref, -foc->phase_cur_max, foc->phase_cur_max);
+    foc->idref = _clamp(idref, -foc->phase_cur_max, foc->phase_cur_max);
     return 0;
 }
 
@@ -592,7 +599,7 @@ int qfoc_pref_set(QFocObj *foc, qfp_t pref)
     return 0;
 }
 
-int qfoc_compel_calc(qfp_t vbus, qfp_t vq, qfp_t vd, qfp_t edegree, uint16_t pwm_max, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
+int qfoc_compel_exec(qfp_t vbus, qfp_t vq, qfp_t vd, qfp_t edegree, uint16_t pwm_max, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
 {
     qfp_t ta, tb, tc;
 
@@ -606,7 +613,7 @@ int qfoc_compel_calc(qfp_t vbus, qfp_t vq, qfp_t vd, qfp_t edegree, uint16_t pwm
     return sector;
 }
 
-int qfoc_oloop_calc(QFocObj *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
+int qfoc_oloop_exec(QFocObj *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
 {
     if(!foc) {
         return -1;
@@ -639,9 +646,9 @@ int qfoc_oloop_calc(QFocObj *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc
 }
 
 /* FOC current loop control */
-int qfoc_iloop_calc(QFocObj *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
+int qfoc_iloop_exec(QFocObj *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
 {
-    if(!foc) {
+    if(!foc || !foc->iloopc) {
         return -1;
     }
     qfp_t ta, tb, tc;
@@ -660,7 +667,7 @@ int qfoc_iloop_calc(QFocObj *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc
         return -1;
     }
     QFocOutput output = { 0 };
-    QFocError err = foc->iloop_ctrl(foc, &output);
+    QFocError err = foc->iloopc(foc, &output);
 
     if(err != QFOC_ERR_NONE) {
         foc->status = QFOC_STATUS_ERROR;
@@ -683,13 +690,13 @@ int qfoc_iloop_calc(QFocObj *foc, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc
 }
 
 /* FOC velocity/position current double loop pid control */
-int qfoc_vloop_update(QFocObj *foc)
+int qfoc_vloop_exec(QFocObj *foc)
 {
-    if(!foc) {
+    if(!foc || !foc->vloopc) {
         return -1;
     }
     QFocOutput output = { 0 };
-    foc->err = foc->vloop_ctrl(foc, &output);
+    foc->err = foc->vloopc(foc, &output);
 
     if(output.to == QFOC_OUT_TO_ILOOP) {
         foc->iqref = output.iqref;
@@ -705,13 +712,13 @@ int qfoc_vloop_update(QFocObj *foc)
     return 0;
 }
 
-int qfoc_ploop_update(QFocObj *foc)
+int qfoc_ploop_exec(QFocObj *foc)
 {
-    if(!foc) {
+    if(!foc || !foc->ploopc) {
         return -1;
     }
     QFocOutput output = { 0 };
-    foc->err = foc->ploop_ctrl(foc, &output);
+    foc->err = foc->ploopc(foc, &output);
 
     if(output.to == QFOC_OUT_TO_VLOOP) {
         foc->vref = output.vref;
@@ -728,7 +735,7 @@ int qfoc_ploop_update(QFocObj *foc)
     return 0;
 }
 
-int qfoc_calib_calc(QFocObj *foc, qfp_t vdmax, qfp_t pref, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
+int qfoc_axis_align(QFocObj *foc, qfp_t vdmax, qfp_t pref, uint16_t *pwma, uint16_t *pwmb, uint16_t *pwmc)
 {
     if(!foc || !pwma || !pwmb || !pwmc) {
         return -1;
