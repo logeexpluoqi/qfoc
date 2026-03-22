@@ -7,7 +7,6 @@
  * Description:
  */
 
-#include <math.h>
 #include "pid.h"
 
 static const fp_t pi = 3.14159265358979323846;
