@@ -1,7 +1,7 @@
 /**
  * Author: luoqi
  * Created Date: 2026-03-07 23:27:34
- * Last Modified: 2026-03-20 23:28:26
+ * Last Modified: 2026-03-25 00:26:15
  * Modified By: luoqi at <**@****>
  * Copyright (c) 2026 <*****>
  * Description:
@@ -47,12 +47,11 @@ int pid_gain_set(Pid *pid, fp_t kp, fp_t ki, fp_t kd)
     pid->kp = kp;
     pid->ki = ki;
     pid->kd = kd;
-    pid->kaw = ki;
     pid->coef_ki = ki * pid->ts;
 
     if(pid->kaw < 0) {
-        pid->kaw = ki;
-        pid->coef_kaw = ki * pid->ts;
+        pid->kaw =1 / ki;
+        pid->coef_kaw = pid->kaw * pid->ts;
     }
 
     fp_t wc = 2.0 * pi * pid->fc;
@@ -106,11 +105,15 @@ fp_t pid_calc(Pid *pid, fp_t ref, fp_t fdbk)
         pid->y_diff_k1 = d;
     }
 
+    pid->integ = pid->integ + pid->coef_ki * e - pid->coef_kaw * (pid->y_unsat_k1 - pid->y_k1);
+
     fp_t y_unsat = p + pid->integ + d;
+
+    pid->y_unsat_k1 = y_unsat;
 
     fp_t y = clamp_(y_unsat, pid->omin, pid->omax);
 
-    pid->integ = pid->integ + pid->coef_ki * e - pid->coef_kaw * (y_unsat - y);
+    pid->y_k1 = y;
 
     return y;
 }

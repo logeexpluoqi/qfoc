@@ -1,7 +1,7 @@
 /**
  * Author: luoqi
  * Created Date: 2026-03-07 02:12:33
- * Last Modified: 2026-03-20 23:28:52
+ * Last Modified: 2026-03-25 00:25:26
  * Modified By: luoqi at <**@****>
  * Copyright (c) 2026 <*****>
  * Description:
@@ -30,7 +30,7 @@ typedef struct {
     fp_t kp;  // proportional gain
     fp_t ki;  // integral gain
     fp_t kd;  // derivative gain
-    fp_t kaw; // anti-windup gain, default: ki
+    fp_t kaw; // anti-windup gain, default: 1/ki
 
     fp_t coef_ki;   // integral term coefficient, ki * ts
     fp_t coef_kaw;  // anti-windup term coefficient, kaw * ts
@@ -44,6 +44,8 @@ typedef struct {
     fp_t coef_b;        // derivative low-pass filter coefficient b
     fp_t r_diff_k1;     // previous difference input
     fp_t y_diff_k1;     // previous difference output
+    fp_t y_unsat_k1;    // previous unsaturated output
+    fp_t y_k1;          // previous output
 
     fp_t integ;         // integral term
     fp_t fdbk_k1;       // previous feedback
@@ -81,7 +83,7 @@ int pid_gain_set(Pid *pid, fp_t kp, fp_t ki, fp_t kd);
 int pid_fc_set(Pid *pid, fp_t fc);
 
 /** 
- * @brief set anti-windup gain, default: ki
+ * @brief set anti-windup gain, default: 1/ki
  * @param pid PID controller
  * @param kaw anti-windup gain
  * @return 0 if success, -1 if failed
